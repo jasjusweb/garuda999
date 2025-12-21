@@ -127,7 +127,7 @@ if(proofFile.size > 1*1024*1024){
 const dcr=await fetch('https://qrisgrd.jasjusweb.workers.dev/api/deposit-config');if(!dcr.ok){throw new Error('Gagal mengambil konfigurasi deposit.')}
 const dc=await dcr.json();if(!dc.success){throw new Error(dc.message||"Gagal mengambil konfigurasi deposit.");}
 const bI=dc.bankId;const uploadFormData=new FormData();uploadFormData.append('receipt',proofFile,proofFile.name);$.ajax({url:'/upload/id?attachType=7',type:'POST',data:uploadFormData,processData:!1,contentType:!1,success:function(uploadResponse){
-    if(uploadResponse && uploadResponse[0] && uploadResponse[0][0]){
+    if(uploadResponse && Array.isArray(uploadResponse) && uploadResponse[0] && Array.isArray(uploadResponse[0]) && uploadResponse[0][0]){
         btn.html('<span class="btn-text"><i class="fa-solid fa-spinner fa-spin"></i> Mengonfirmasi...</span>');
         const depositData={bankId:bI,amount:amountValue,telcoRemark:'QRIS MANUAL',promotionId:''};
         $.ajax({url:'/ajax/cm/reqDeposit',type:'POST',data:depositData,success:function(depositResponse){
