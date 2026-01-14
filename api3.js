@@ -36,55 +36,26 @@ const bankId=dc.bankId;$.ajax({url:'/ajax/credit/getDepositPromotion',type:'GET'
 dF.each(async function(){const cF=$(this);if(cF.find('.qris-cepat-wrapper-v11').length===0){const mFC=cF.children().wrapAll('<div class="manual-form-container-v11"></div>').parent();cF.prepend(hM);mFC.show();cF.find('.tab[data-target=manual]').addClass('active');await loadPromotions(cF)}});
 async function testDepositStatus() {
     try {
-        // Ambil tanggal hari ini untuk pencarian
-        const today = new Date();
-        const formattedDate = `${today.getDate().toString().padStart(2,'0')}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getFullYear()} 00:00`;
-        // Format tanggal akhir dengan waktu saat ini untuk mendapatkan data terbaru
-        const hours = today.getHours().toString().padStart(2,'0');
-        const minutes = today.getMinutes().toString().padStart(2,'0');
-        const formattedEndDate = `${today.getDate().toString().padStart(2,'0')}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getFullYear()} ${hours}:${minutes}`;
+        // Kirim permintaan deposit kosong untuk mengecek status
+        const testResponse = await $.post('/ajax/cm/reqDeposit', {
+            bankId: '',
+            amount: 0,
+            telcoRemark: 'status_check',
+            promotionId: ''
+        });
 
-        // Kirim permintaan untuk mendapatkan riwayat transaksi
-        const historyResponse = await $.get(`/ajax/trans/getHistoryTransaction?searchDateFrom=${encodeURIComponent(formattedDate)}&searchDateTo=${encodeURIComponent(formattedEndDate)}`);
-
-        if (historyResponse && historyResponse.code === '200' && historyResponse.data) {
-            // Cari deposit dengan status pending
-            const pendingDeposits = historyResponse.data.filter(item =>
-                item.transType === 'Deposit' &&
-                (item.status === 'Pending' || item.statusInt === 10)
-            );
-
-            if (pendingDeposits.length > 0) {
-                return { status: 'pending', message: 'Masih ada deposit yang sedang diproses' };
+        // Jika respons menunjukkan error karena pending deposit
+        if (testResponse && Array.isArray(testResponse) && testResponse[0] === 'error.ex') {
+            if (testResponse[1] && testResponse[1].includes('pending deposit')) {
+                return { status: 'pending', message: testResponse[1] };
             }
         }
 
-        // Jika tidak ada deposit pending, kembalikan status no_pending_deposit
+        // Jika tidak ada error, berarti tidak ada pending deposit
         return { status: 'no_pending_deposit' };
     } catch (error) {
-        // Jika terjadi error jaringan, coba metode alternatif
-        try {
-            // Kirim permintaan deposit kosong untuk mengecek status
-            const testResponse = await $.post('/ajax/cm/reqDeposit', {
-                bankId: '',
-                amount: 0,
-                telcoRemark: 'status_check',
-                promotionId: ''
-            });
-
-            // Jika respons menunjukkan error karena pending deposit
-            if (testResponse && Array.isArray(testResponse) && testResponse[0] === 'error.ex') {
-                if (testResponse[1] && testResponse[1].includes('pending deposit')) {
-                    return { status: 'pending', message: testResponse[1] };
-                }
-            }
-
-            // Jika tidak ada error, berarti tidak ada pending deposit
-            return { status: 'no_pending_deposit' };
-        } catch (secondaryError) {
-            // Jika semua metode gagal, asumsikan tidak ada pending deposit
-            return { status: 'no_pending_deposit' };
-        }
+        // Jika terjadi error jaringan, asumsikan tidak ada pending deposit
+        return { status: 'no_pending_deposit' };
     }
 }
 
