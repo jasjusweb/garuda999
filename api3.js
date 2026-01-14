@@ -36,22 +36,55 @@ const bankId=dc.bankId;$.ajax({url:'/ajax/credit/getDepositPromotion',type:'GET'
 dF.each(async function(){const cF=$(this);if(cF.find('.qris-cepat-wrapper-v11').length===0){const mFC=cF.children().wrapAll('<div class="manual-form-container-v11"></div>').parent();cF.prepend(hM);mFC.show();cF.find('.tab[data-target=manual]').addClass('active');await loadPromotions(cF)}});
 async function testDepositStatus() {
     try {
-        const testResponse = await $.post('/ajax/cm/reqDeposit', {
-            bankId: '',
-            amount: 0,
-            telcoRemark: 'status_check',
-            promotionId: ''
-        });
+        // Ambil tanggal hari ini untuk pencarian
+        const today = new Date();
+        const formattedDate = `${today.getDate().toString().padStart(2,'0')}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getFullYear()} 00:00`;
+        // Format tanggal akhir dengan waktu saat ini untuk mendapatkan data terbaru
+        const hours = today.getHours().toString().padStart(2,'0');
+        const minutes = today.getMinutes().toString().padStart(2,'0');
+        const formattedEndDate = `${today.getDate().toString().padStart(2,'0')}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getFullYear()} ${hours}:${minutes}`;
 
-        if (testResponse && Array.isArray(testResponse) && testResponse[0] === 'error.ex') {
-            if (testResponse[1] && testResponse[1].includes('pending deposit')) {
-                return { status: 'pending', message: testResponse[1] };
+        // Kirim permintaan untuk mendapatkan riwayat transaksi
+        const historyResponse = await $.get(`/ajax/trans/getHistoryTransaction?searchDateFrom=${encodeURIComponent(formattedDate)}&searchDateTo=${encodeURIComponent(formattedEndDate)}`);
+
+        if (historyResponse && historyResponse.code === '200' && historyResponse.data) {
+            // Cari deposit dengan status pending
+            const pendingDeposits = historyResponse.data.filter(item =>
+                item.transType === 'Deposit' &&
+                (item.status === 'Pending' || item.statusInt === 10)
+            );
+
+            if (pendingDeposits.length > 0) {
+                return { status: 'pending', message: 'Masih ada deposit yang sedang diproses' };
             }
         }
 
+        // Jika tidak ada deposit pending, kembalikan status no_pending_deposit
         return { status: 'no_pending_deposit' };
     } catch (error) {
-        return { status: 'no_pending_deposit' };
+        // Jika terjadi error jaringan, coba metode alternatif
+        try {
+            // Kirim permintaan deposit kosong untuk mengecek status
+            const testResponse = await $.post('/ajax/cm/reqDeposit', {
+                bankId: '',
+                amount: 0,
+                telcoRemark: 'status_check',
+                promotionId: ''
+            });
+
+            // Jika respons menunjukkan error karena pending deposit
+            if (testResponse && Array.isArray(testResponse) && testResponse[0] === 'error.ex') {
+                if (testResponse[1] && testResponse[1].includes('pending deposit')) {
+                    return { status: 'pending', message: testResponse[1] };
+                }
+            }
+
+            // Jika tidak ada error, berarti tidak ada pending deposit
+            return { status: 'no_pending_deposit' };
+        } catch (secondaryError) {
+            // Jika semua metode gagal, asumsikan tidak ada pending deposit
+            return { status: 'no_pending_deposit' };
+        }
     }
 }
 
@@ -107,7 +140,35 @@ if(progressBar.length > 0) {
 };const getAccountData=(callback)=>{if(accountData){callback(accountData);return}
 $.get('/ajax/account/getAccountDto',function(r){if(r&&typeof r[4]==='string'&&r[4].length>=3){accountData=r;callback(r)}else{callback(null)}}).fail(()=>{callback(null)})};
 $('body').on('change','#promo-select',function(){const selectedPromoId=$(this).val();const selectedPromoName=$(this).find('option:selected').text();const amountInput=$(this).closest('.qris-form-container').find('#qris-amount');const promoInfoDiv=$(this).siblings('.selected-promo-info');amountInput.data('promo-id','').data('min-deposit','');promoInfoDiv.hide().html('');if(selectedPromoId){promoInfoDiv.html('<i class="fa-solid fa-spinner fa-spin"></i> Memeriksa info...').show();$.ajax({url:'/ajax/deposit/getPromotionInfo',type:'GET',data:{id:selectedPromoId},dataType:'json',success:function(r){if(r&&r.code==='200'){const{minDepositAmount:minDeposit,turnoverCondition:to,maxBonusAmount:maxBonusRaw}=r;const maxBonus=parseFloat(maxBonusRaw)*1000;amountInput.data('promo-id',selectedPromoId).data('min-deposit',minDeposit);promoInfoDiv.html(`Min. Depo: <strong>${parseFloat(minDeposit).toLocaleString('id-ID')}</strong> | TO: <strong>x${to}</strong> | Max Bonus: <strong>${maxBonus.toLocaleString('id-ID')}</strong>`).show()}else{promoInfoDiv.text('Gagal memuat detail promo.').show()}},error:function(){promoInfoDiv.text('Error saat mengambil info promo.').show()}})}});
-$('body').on('click','.qris-cepat-wrapper-v11 .tab',function(){const cT=$(this);const t=cT.data('target');const w=cT.closest('.qris-cepat-wrapper-v11');if(cT.hasClass('active'))return;w.find('.tab').removeClass('active');cT.addClass('active');const pF=cT.closest('form');const manualForm=pF.find('.manual-form-container-v11');const qrisForm=w.find('.qris-form-container');const qris2Form=w.find('.qris2-form-container');manualForm.hide();qrisForm.hide();qris2Form.hide();if(t==='manual'){manualForm.show()}else if(t==='qris'){qrisForm.show();const aQD=sessionStorage.getItem('activeQrData');if(aQD&&Date.now()<JSON.parse(aQD).expireTime){const qD=JSON.parse(aQD);if(qD.qrisString&&typeof qD.initialBalance==='number'){dGQ(qD,qrisForm)}}else{sessionStorage.removeItem('activeQrData');qrisForm.find('.cepat-input-area').show();qrisForm.find('.result-container').empty()}}else if(t==='qris2'){qris2Form.show();const barcodeContainer=w.find('#qris2-barcode-container');if(barcodeContainer.find('img').length===0){barcodeContainer.html('<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Memuat barcode...');$.ajax({url:'https://qrisgrd.jasjusweb.workers.dev/api/barcode',type:'GET',dataType:'json',success:function(response){if(response.success&&response.attachId){let imageUrl=response.attachId;let merchantName=response.merchantName || response.name || 'Tidak Dikenali';barcodeContainer.html('<div style="text-align: center;"><img src="'+imageUrl+'" alt="QRIS 2 Barcode" style="max-width:250px; height:auto; margin:0 auto 15px; display:block;"><div class="merchant-info" style="margin-top:10px; text-align: center;"><i class="fa-solid fa-store"></i> Merchant: <strong class="merchant-name">'+merchantName+'</strong></div></div>')}else{barcodeContainer.html('<span style="color:red;">'+(response.message || 'Sistem pembayaran dalam pemeliharaan.')+'</span>')}},error:function(){barcodeContainer.html('<span style="color:red;">Gagal memuat barcode. Silakan coba lagi.</span>')}})}}});
+$('body').on('click','.qris-cepat-wrapper-v11 .tab',function(){const cT=$(this);const t=cT.data('target');const w=cT.closest('.qris-cepat-wrapper-v11');if(cT.hasClass('active'))return;w.find('.tab').removeClass('active');cT.addClass('active');const pF=cT.closest('form');const manualForm=pF.find('.manual-form-container-v11');const qrisForm=w.find('.qris-form-container');const qris2Form=w.find('.qris2-form-container');manualForm.hide();qrisForm.hide();qris2Form.hide();if(t==='manual'){manualForm.show()}else if(t==='qris'){qrisForm.show();const aQD=sessionStorage.getItem('activeQrData');if(aQD){const qD=JSON.parse(aQD);if(Date.now()>=qD.expireTime){// Waktu deposit telah habis, hapus dari sessionStorage dan tampilkan form
+sessionStorage.removeItem('activeQrData');
+qrisForm.find('.cepat-input-area').show();
+qrisForm.find('.result-container').empty();
+}else if(qD.qrisString&&typeof qD.initialBalance==='number'){// Periksa apakah deposit telah diproses dengan membandingkan saldo
+// Cek apakah saldo bertambah
+$.get('/ajax/account/getAccountDto',function(accResp){
+    if(accResp&&typeof accResp[2]==='number'){
+        const currentBalance = accResp[2];
+        const initialBalance = qD.initialBalance;
+        // Jika saldo bertambah, deposit telah diproses
+        if(currentBalance > initialBalance){
+            // Deposit telah diproses, hapus dari sessionStorage dan tampilkan form
+            sessionStorage.removeItem('activeQrData');
+            qrisForm.find('.cepat-input-area').show();
+            qrisForm.find('.result-container').empty();
+        }else{
+            // Deposit belum diproses, tampilkan QRIS
+            dGQ(qD,qrisForm);
+        }
+    }else{
+        // Jika gagal mendapatkan saldo, tampilkan QRIS sebagai fallback
+        dGQ(qD,qrisForm);
+    }
+}).fail(function(){
+    // Jika gagal memeriksa saldo, tetap tampilkan QRIS sebagai fallback
+    dGQ(qD,qrisForm);
+});
+}}else{sessionStorage.removeItem('activeQrData');qrisForm.find('.cepat-input-area').show();qrisForm.find('.result-container').empty()}}else if(t==='qris2'){qris2Form.show();const barcodeContainer=w.find('#qris2-barcode-container');if(barcodeContainer.find('img').length===0){barcodeContainer.html('<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Memuat barcode...');$.ajax({url:'https://qrisgrd.jasjusweb.workers.dev/api/barcode',type:'GET',dataType:'json',success:function(response){if(response.success&&response.attachId){let imageUrl=response.attachId;let merchantName=response.merchantName || response.name || 'Tidak Dikenali';barcodeContainer.html('<div style="text-align: center;"><img src="'+imageUrl+'" alt="QRIS 2 Barcode" style="max-width:250px; height:auto; margin:0 auto 15px; display:block;"><div class="merchant-info" style="margin-top:10px; text-align: center;"><i class="fa-solid fa-store"></i> Merchant: <strong class="merchant-name">'+merchantName+'</strong></div></div>')}else{barcodeContainer.html('<span style="color:red;">'+(response.message || 'Sistem pembayaran dalam pemeliharaan.')+'</span>')}},error:function(){barcodeContainer.html('<span style="color:red;">Gagal memuat barcode. Silakan coba lagi.</span>')}})}}});
 $('body').on('click','.quick-amount-btn',function(){const cB=$(this);const iA=cB.closest('.cepat-input-area');const amountInput=iA.find('#qris-amount');amountInput.data('unique-code','');amountInput.val(parseInt(cB.data('amount'))).trigger('input').removeClass('is-invalid');iA.find('.qris-validation-message').hide()});
 $('body').on('input','.form-control[data-type], #qris2-amount',function(event){const input=$(this);const formGroup=input.closest('.form-group');const infoDiv=formGroup.find('.unique-code-info');const clearBtn=formGroup.find('.clear-input-btn');const type=input.data('type');input.removeClass('is-invalid');formGroup.find('.qris-validation-message').hide();let rawValue=input.val().replace(/[^\d]/g,'');if(rawValue&&parseInt(rawValue,10)>10000000){rawValue='10000000'}
 const nominal=parseInt(rawValue,10)||0;input.closest('.cepat-input-area').find('.quick-amount-btn').each(function(){const btn=$(this);if(parseInt(btn.data('amount'),10)===nominal){btn.addClass('active')}else{btn.removeClass('active')}});input.val(rawValue?nominal.toLocaleString('id-ID'):'');if(nominal>0){if(type==='qris'){if(nominal===10000000){let uniqueCode=0;input.data('unique-code',uniqueCode);const totalAmount=nominal;infoDiv.html(`Total Transfer: <strong style="color: #00a2b1;">Rp ${totalAmount.toLocaleString('id-ID')}</strong>`).show()}else{let uniqueCode=input.data('unique-code');if(!uniqueCode||uniqueCode===0){const uniqueCodeLength = window.qrisUniqueCodeLength || 2; // Default to 2 if not set
