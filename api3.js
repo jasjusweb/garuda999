@@ -34,58 +34,15 @@ window.qrisUniqueCodeLength = dc.uniqueCodeLength || 2;
 
 const bankId=dc.bankId;$.ajax({url:'/ajax/credit/getDepositPromotion',type:'GET',dataType:'json',data:{bankId:bankId},success:function(response){promoSelect.empty();if(response&&response[0]==='success'&&response[1].length>0){promoSelect.prop('disabled',false);promoSelect.append('<option value="">-- Pilih Promosi --</option>');response[1].forEach(p=>{const promoId=p[0];const promoName=p[1];const optionHtml=`<option value="${promoId}">${promoName}</option>`;promoSelect.append(optionHtml)})}else{promoSelect.prop('disabled',true);promoSelect.append('<option value="">Tidak ada promosi yang tersedia</option>')}},error:function(){promoSelect.empty();promoSelect.prop('disabled',true);promoSelect.append('<option value="">Gagal memuat promosi</option>')}});}catch(error){promoSelect.empty();promoSelect.prop('disabled',true);promoSelect.append('<option value="">Gagal mengambil konfigurasi</option>');console.error('Error loading promotions:',error);}}
 dF.each(async function(){const cF=$(this);if(cF.find('.qris-cepat-wrapper-v11').length===0){const mFC=cF.children().wrapAll('<div class="manual-form-container-v11"></div>').parent();cF.prepend(hM);mFC.show();cF.find('.tab[data-target=manual]').addClass('active');await loadPromotions(cF)}});
-async function testDepositStatus() {
-    try {
-        // Kirim permintaan deposit kosong untuk mengecek status
-        const testResponse = await $.post('/ajax/cm/reqDeposit', {
-            bankId: '',
-            amount: 0,
-            telcoRemark: 'status_check',
-            promotionId: ''
-        });
-
-        // Jika respons menunjukkan error karena pending deposit
-        if (testResponse && Array.isArray(testResponse) && testResponse[0] === 'error.ex') {
-            if (testResponse[1] && testResponse[1].includes('pending deposit')) {
-                return { status: 'pending', message: testResponse[1] };
-            }
-        }
-
-        // Jika tidak ada error, berarti tidak ada pending deposit
-        return { status: 'no_pending_deposit' };
-    } catch (error) {
-        // Jika terjadi error jaringan, asumsikan tidak ada pending deposit
-        return { status: 'no_pending_deposit' };
-    }
-}
 
 const sDS=(w,dA)=>{if(bC)clearInterval(bC);if(qT)clearInterval(qT);$.post('/ajax/cma2/allGamqris2Refresh');$.get('/ajax/account/getAccountDto',function(r){if(r&&typeof r[2]==='number'){$('.g8-bal-total').text('IDR '+r[2].toLocaleString('id-ID'))}});let aFS=0;const aQD=sessionStorage.getItem('activeQrData');const aDD=sessionStorage.getItem('activeDanaData');if(aQD){aFS=JSON.parse(aQD).amount}else if(aDD){aFS=JSON.parse(aDD).amount}
 sessionStorage.removeItem('activeQrData');sessionStorage.removeItem('activeDanaData');const rC=w.find('.result-container');const fA=aFS.toLocaleString('id-ID');
 
-testDepositStatus().then(status => {
-    let additionalContent = '';
+const sH=`<div class="success-container"><svg class="svg-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="svg-checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="svg-checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg><h3>Deposit Berhasil!</h3><p>Saldo sebesar <strong>Rp ${fA}</strong> telah ditambahkan ke akun anda.</p></div>`;
+rC.html(sH).show();
+w.find('.cepat-input-area').hide();
 
-    if (status.status === 'no_pending_deposit') {
-        additionalContent = '<button type="button" class="new-deposit-btn">Buat Deposit Baru</button>';
-    } else {
-        additionalContent = `
-            <p>Anda masih memiliki deposit yang sedang diproses.</p>
-            <p>Silakan tunggu hingga deposit sebelumnya selesai diproses.</p>
-        `;
-    }
-
-    const sH=`<div class="success-container"><svg class="svg-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="svg-checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="svg-checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg><h3>Deposit Berhasil!</h3><p>Saldo sebesar <strong>Rp ${fA}</strong> telah ditambahkan ke akun anda.</p>${additionalContent}</div>`;
-    rC.html(sH).show();
-    w.find('.cepat-input-area').hide();
-
-    setTimeout(()=>{const sC=rC.find('.success-container');if(sC.length){sC.addClass('visible')}},10);
-
-    if (status.status === 'no_pending_deposit') {
-        $('.new-deposit-btn').on('click', function() {
-            resetDepositForm(w);
-        });
-    }
-});};
+setTimeout(()=>{const sC=rC.find('.success-container');if(sC.length){sC.addClass('visible')}},10);};
 
 const sBC=(iB,w)=>{if(bC)clearInterval(bC);bC=setInterval(()=>{$.get('/ajax/account/getAccountDto',function(r){if(r&&typeof r[2]==='number'){const cB=r[2];if(cB>iB){sDS(w,cB)}}}).fail(()=>{console.error("Gagal memeriksa saldo akun.")})},5000)};const sQT=(eT,w)=>{if(qT)clearInterval(qT);const tD=w.find('.payment-timer');const totalDuration = 300;
 const progressBar = w.find('.progress-bar');
