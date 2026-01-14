@@ -10,6 +10,160 @@ function parseQrisMerchantName(q){const t='59';const i=q.indexOf(t);if(i===-1)re
 function generateQrisPayload(o,a){function c(d){let c=0xFFFF;for(let b=0;b<d.length;b++){c^=d.charCodeAt(b)<<8;for(let e=0;e<8;e++)c=(c&0x8000)?(c<<1)^0x1021:c<<1}
 return('0000'+(c&0xFFFF).toString(16).toUpperCase()).slice(-4)}
 const t='5802ID';const i=o.indexOf(t);if(i===-1)throw new Error("Format qrisString tidak valid.");const p=o.substring(0,i);const s=o.substring(i);const m=a.toString();const l=m.length.toString().padStart(2,'0');const n=`54${l}${m}`;const r=`${p}${n}${s}6304`;const u=c(r);return `${p}${n}${s}6304${u}`}
+
+// Fungsi untuk memeriksa status deposit dan reset jika cancel
+function checkAndResetCanceledDeposit() {
+    const activeQrData = sessionStorage.getItem('activeQrData');
+    const activeDanaData = sessionStorage.getItem('activeDanaData');
+
+    if (!activeQrData && !activeDanaData) return;
+
+    // Ambil data transaksi terbaru dari API
+    $.ajax({
+        url: '/ajax/trans/getHistoryTransaction',
+        type: 'GET',
+        data: {
+            searchDateFrom: getCurrentDateFormatted() + ' 00:00',
+            searchDateTo: getCurrentDateFormatted() + ' 23:59'
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response && response.code === '200' && response.data && response.data.length > 0) {
+                // Cari transaksi deposit terbaru dengan status Cancel
+                const latestTransaction = response.data[0];
+
+                if (latestTransaction.transType === 'Deposit' && latestTransaction.status === 'Cancel') {
+                    // Reset semua data di sessionStorage
+                    sessionStorage.removeItem('activeQrData');
+                    sessionStorage.removeItem('activeDanaData');
+
+                    // Clear interval timer jika ada
+                    if (qT) clearInterval(qT);
+                    if (bC) clearInterval(bC);
+
+                    // Reset form QRIS yang sedang aktif
+                    $('.qris-form-container:visible').each(function() {
+                        const container = $(this);
+                        container.find('.result-container').empty().hide();
+                        container.find('.cepat-input-area').show();
+                        container.find('input[type="text"]').val('');
+                        container.find('.form-control').removeClass('is-invalid');
+                        container.find('.qris-validation-message').hide();
+                        container.find('.unique-code-info').hide();
+                        container.find('.selected-promo-info').hide();
+                        container.find('.qris-button').prop('disabled', false)
+                            .html('<span class="btn-text"><i class="fa-solid fa-qrcode"></i> Buat QRIS</span>');
+                        container.find('.quick-amount-btn').removeClass('active');
+                    });
+
+                    // Reset form QRIS2 yang sedang aktif
+                    $('.qris2-form-container:visible').each(function() {
+                        const container = $(this);
+                        container.find('.result-container').empty().hide();
+                        container.find('.cepat-input-area').show();
+                        container.find('input[type="text"]').val('');
+                        container.find('input[type="file"]').val('');
+                        container.find('.form-control').removeClass('is-invalid');
+                        container.find('.qris-validation-message').hide();
+                        container.find('.qris2-button').prop('disabled', false)
+                            .html('<span class="btn-text"><i class="fa-solid fa-paper-plane"></i> Konfirmasi Pembayaran</span>');
+                    });
+
+                    // Tampilkan notifikasi
+                    showCancelNotification();
+                }
+            }
+        },
+        error: function() {
+            console.error('Gagal memeriksa status transaksi');
+        }
+    });
+}
+
+// Fungsi untuk mendapatkan tanggal saat ini dalam format DD-MM-YYYY
+function getCurrentDateFormatted() {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    return `${day}-${month}-${year}`;
+}
+
+// Fungsi untuk menampilkan notifikasi deposit dibatalkan
+function showCancelNotification() {
+    // Hapus notifikasi sebelumnya jika ada
+    $('.deposit-cancel-notification').remove();
+
+    const notificationHTML = `
+        <div class="deposit-cancel-notification" style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #ff6b6b, #ff4757);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+            z-index: 9999;
+            animation: slideInRight 0.5s ease;
+            max-width: 350px;
+            border-left: 5px solid #ff3838;
+        ">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.2rem;"></i>
+                <div>
+                    <strong style="display: block; margin-bottom: 5px;">Deposit Dibatalkan</strong>
+                    <span style="font-size: 0.85rem;">Deposit terakhir Anda dibatalkan. Silakan coba deposit ulang.</span>
+                </div>
+            </div>
+            <button class="close-notification-btn" style="
+                background: none;
+                border: none;
+                color: white;
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                cursor: pointer;
+                font-size: 1rem;
+            ">&times;</button>
+        </div>
+    `;
+
+    $('body').append(notificationHTML);
+
+    // Auto hide setelah 5 detik
+    setTimeout(() => {
+        $('.deposit-cancel-notification').fadeOut(300, function() {
+            $(this).remove();
+        });
+    }, 5000);
+
+    // Event listener untuk tombol close
+    $(document).on('click', '.close-notification-btn', function() {
+        $(this).closest('.deposit-cancel-notification').fadeOut(300, function() {
+            $(this).remove();
+        });
+    });
+}
+
+// Tambahkan CSS untuk animasi notifikasi
+const cancelNotificationCSS = `
+ @keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.deposit-cancel-notification {
+    animation: slideInRight 0.5s ease;
+}
+`;
+
 jQuery(document).ready(function($){if($('.qris-cepat-wrapper-v11').length>0){return}
 let qT=null;let bC=null;let pIR=null;let accountData=null;function compressImage(file,maxSizeInMB=1){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.readAsDataURL(file);reader.onload=(event)=>{const img=new Image();img.src=event.target.result;img.onload=()=>{const canvas=document.createElement('canvas');const ctx=canvas.getContext('2d');const MAX_WIDTH=1920;const MAX_HEIGHT=1080;let width=img.width;let height=img.height;if(width>height){if(width>MAX_WIDTH){height*=MAX_WIDTH/width;width=MAX_WIDTH}}else{if(height>MAX_HEIGHT){width*=MAX_HEIGHT/height;height=MAX_HEIGHT}}
 canvas.width=width;canvas.height=height;ctx.drawImage(img,0,0,width,height);canvas.toBlob((blob)=>{if(blob.size<file.size){resolve(blob)}else{resolve(file)}},'image/jpeg',0.7)};img.onerror=(error)=>reject(error)};reader.onerror=(error)=>reject(error)})}
@@ -53,11 +207,10 @@ const percentage = (elapsed / totalDuration) * 100;
 if(progressBar.length > 0) {
     progressBar.css('width', `${percentage}%`);
 }},1000)};const sQE=(w)=>{if(bC)clearInterval(bC);sessionStorage.removeItem('activeQrData');sessionStorage.removeItem('activeDanaData');const eH=`<div class="expired-container"><h3>Waktu Pembayaran Habis!</h3><button type="button" class="buat-ulang-btn"><i class="fa-solid fa-plus-circle"></i> Buat Deposit Ulang</button></div>`;w.find('.result-container').html(eH).show()};const dGQ=(d,w)=>{
-  const{amount:a,expireTime:e,qrisString:q,initialBalance:i,transactionId:tId}=d;
+  const{amount:a,expireTime:e,qrisString:q,initialBalance:i}=d;
   const mN=parseQrisMerchantName(q);
   const qP=generateQrisPayload(q,a.toString());
   const rH=`<div class="timer-container">Waktu Habis Dalam: <span class="payment-timer">-</span></div><div class="progress-container" style="width:100%;background-color:#f0f0f0;border-radius:5px;overflow:hidden;margin:5px 0;"><div class="progress-bar" style="height:5px;background-color:#00a2b1;width:0%;transition:width 1s;"></div></div><div class="merchant-info"><i class="fa-solid fa-shop"></i> Merchant: <strong class="merchant-name">${mN||'Tidak Dikenali'}</strong></div><div class="barcode-display"></div><strong class="final-amount">Rp ${a.toLocaleString('id-ID')}</strong><a href="#" class="download-btn"><i class="fa-solid fa-qrcode"></i> Download QR</a>`;
-
   const rC=w.find('.result-container');
   rC.html(rH);
   const bD=rC.find('.barcode-display');
@@ -66,13 +219,6 @@ if(progressBar.length > 0) {
   rC.show();
   sQT(e,w);
   sBC(i,w);
-
-  // Mulai monitoring status deposit jika ID transaksi tersedia
-  if(tId) {
-    setTimeout(() => {
-      monitorDepositStatus(tId, w.closest('.qris-form-container'), 10000);
-    }, 1000); // Tunggu 1 detik agar UI selesai dimuat
-  }
 };const getAccountData=(callback)=>{if(accountData){callback(accountData);return}
 $.get('/ajax/account/getAccountDto',function(r){if(r&&typeof r[4]==='string'&&r[4].length>=3){accountData=r;callback(r)}else{callback(null)}}).fail(()=>{callback(null)})};
 $('body').on('change','#promo-select',function(){const selectedPromoId=$(this).val();const selectedPromoName=$(this).find('option:selected').text();const amountInput=$(this).closest('.qris-form-container').find('#qris-amount');const promoInfoDiv=$(this).siblings('.selected-promo-info');amountInput.data('promo-id','').data('min-deposit','');promoInfoDiv.hide().html('');if(selectedPromoId){promoInfoDiv.html('<i class="fa-solid fa-spinner fa-spin"></i> Memeriksa info...').show();$.ajax({url:'/ajax/deposit/getPromotionInfo',type:'GET',data:{id:selectedPromoId},dataType:'json',success:function(r){if(r&&r.code==='200'){const{minDepositAmount:minDeposit,turnoverCondition:to,maxBonusAmount:maxBonusRaw}=r;const maxBonus=parseFloat(maxBonusRaw)*1000;amountInput.data('promo-id',selectedPromoId).data('min-deposit',minDeposit);promoInfoDiv.html(`Min. Depo: <strong>${parseFloat(minDeposit).toLocaleString('id-ID')}</strong> | TO: <strong>x${to}</strong> | Max Bonus: <strong>${maxBonus.toLocaleString('id-ID')}</strong>`).show()}else{promoInfoDiv.text('Gagal memuat detail promo.').show()}},error:function(){promoInfoDiv.text('Error saat mengambil info promo.').show()}})}});
@@ -146,7 +292,7 @@ try{
     const dcr=await fetch('https://qrisgrd.jasjusweb.workers.dev/api/deposit-config');if(!dcr.ok){throw new Error('Gagal mengambil konfigurasi deposit.')}
     const dc=await dcr.json();if(!dc.success){throw new Error(dc.message||"Gagal mengambil konfigurasi deposit.");}
     const bI=dc.bankId;const tR=dc.telcoRemark;const tRI=gB.closest('form').find('input[name="telcoRemark"]');tRI.val(tR);const dD={amount:aWUC,bankId:bI,promotionId:pId,telcoRemark:tR};$.ajax({type:'POST',url:'/ajax/cm/reqDeposit',data:dD,success:function(r){if(r&&Array.isArray(r)&&r[0]==='error.ex'){const eM=r[1]||"";let uM;if(eM.includes("Maximum 1 pending deposit request confirmation")){uM="Hanya boleh ada 1 permintaan deposit yang pending."}else if(eM.includes("tunggu beberapa saat untuk deposit kembali")){uM="Tunggu sebentar sebelum mencoba deposit kembali."}else if(eM.includes("mengambil promo bonus")){uM="Deposit gagal karena promo bonus masih aktif. Silakan hubungi CS untuk bantuan."}else{uM=eM||"Terjadi kesalahan yang tidak diketahui."}
-    vM.text('Gagal: '+uM).show()}else{gB.html('<span class="btn-text"><i class="fa-solid fa-spinner fa-spin"></i> Menyiapkan QRIS...</span>');const qrData={amount:aWUC,expireTime:Date.now()+300*1000,qrisString:qC.qrisString,initialBalance:iB,transactionId:r[1]};const sessionKey='activeQrData';sessionStorage.setItem(sessionKey,JSON.stringify(qrData));dGQ(qrData,w);if(r[1]){console.log('Memulai monitoring untuk ID transaksi:', r[1]);setTimeout(() => {monitorDepositStatus(r[1], w.closest('.qris-form-container'), 10000);}, 1000);}else{console.log('Tidak ada ID transaksi yang ditemukan dalam respons server');}}},error:function(){vM.text('Gagal: Terjadi kesalahan koneksi. Silakan coba lagi.').show()},complete:function(){gB.prop('disabled',!1).html(btnTextDefault)}})}catch(e){vM.text('Gagal: '+(e.message || "Terjadi kesalahan tidak diketahui.")).show();gB.prop('disabled',!1).html(btnTextDefault)}})
+    vM.text('Gagal: '+uM).show()}else{gB.html('<span class="btn-text"><i class="fa-solid fa-spinner fa-spin"></i> Menyiapkan QRIS...</span>');const qrData={amount:aWUC,expireTime:Date.now()+300*1000,qrisString:qC.qrisString,initialBalance:iB};const sessionKey='activeQrData';sessionStorage.setItem(sessionKey,JSON.stringify(qrData));dGQ(qrData,w)}},error:function(){vM.text('Gagal: Terjadi kesalahan koneksi. Silakan coba lagi.').show()},complete:function(){gB.prop('disabled',!1).html(btnTextDefault)}})}catch(e){vM.text('Gagal: '+(e.message || "Terjadi kesalahan tidak diketahui.")).show();gB.prop('disabled',!1).html(btnTextDefault)}})
 $('body').on('click','.qris2-button',async function(){const btn=$(this);const w=btn.closest('.qris2-form-container');const amountInput=w.find('#qris2-amount');const proofInput=w.find('#qris2-proof');const amountFormGroup=amountInput.closest('.form-group');const proofFormGroup=proofInput.closest('.form-group');const amountValidationMessage=amountFormGroup.find('.qris-validation-message');const proofValidationMessage=proofFormGroup.find('.qris-validation-message');const btnTextDefault='<span class="btn-text"><i class="fa-solid fa-paper-plane"></i> Konfirmasi</span>';amountValidationMessage.hide();proofValidationMessage.hide();amountInput.removeClass('is-invalid');proofInput.removeClass('is-invalid');const amountValue=amountInput.val().replace(/[^\d]/g,'');let proofFile=proofInput[0].files[0];if(!amountValue||parseInt(amountValue,10)<=0){amountValidationMessage.text('Silakan isi nominal terlebih dahulu.').show();amountInput.addClass('is-invalid');return}
 const dcr_min=await fetch('https://qrisgrd.jasjusweb.workers.dev/api/deposit-config');if(!dcr_min.ok){throw new Error('Gagal mengambil konfigurasi deposit.')}
 const dc_min=await dcr_min.json();
@@ -215,21 +361,6 @@ const bI=dc.bankId;const uploadFormData=new FormData();uploadFormData.append('re
 <p>Konfirmasi deposit Anda telah berhasil dan akan segera kami proses.</p>
 </div>`;
             w.find('.result-container').html(successHTML);
-
-            // Mulai monitoring status deposit jika ID transaksi tersedia
-            if(depositResponse && Array.isArray(depositResponse) && depositResponse.length > 1) {
-                const transId = depositResponse[1]; // Asumsikan ID transaksi ada di indeks ke-1
-                if(transId) {
-                    console.log('Memulai monitoring untuk ID transaksi QRIS2:', transId);
-                    setTimeout(() => {
-                        monitorDepositStatus(transId, w.closest('.qris2-form-container'), 10000);
-                    }, 1000); // Tunggu 1 detik agar UI selesai dimuat
-                } else {
-                    console.log('Tidak ada ID transaksi yang ditemukan dalam respons server untuk QRIS2');
-                }
-            } else {
-                console.log('Respons server tidak berisi ID transaksi untuk QRIS2');
-            }
         }
     },error:function(){
         amountValidationMessage.text('Gagal konfirmasi deposit. Silakan hubungi CS.').show();
@@ -339,115 +470,28 @@ function downloadQRImage(canvas, amount) {
     link.click();
 }
 
-$('body').on('click','.download-btn',function(e){e.preventDefault();const w=$(this).closest('.result-container'),c=w.find('.barcode-display canvas')[0],a=w.find('.final-amount').text().replace(/[^0-9]/g,'');if(c){saveQRToGallery(c, a);}});const cAQL=()=>{const aQD=sessionStorage.getItem('activeQrData');const qW=$('.qris-form-container:visible');if(qW.length>0&&aQD&&Date.now()<JSON.parse(aQD).expireTime){const qD=JSON.parse(aQD);if(qD.qrisString&&typeof qD.initialBalance==='number'){qW.closest('.qris-cepat-wrapper-v11').find('.tab[data-target="qris"]').trigger('click')}}};setTimeout(cAQL,500)})
+$('body').on('click','.download-btn',function(e){e.preventDefault();const w=$(this).closest('.result-container'),c=w.find('.barcode-display canvas')[0],a=w.find('.final-amount').text().replace(/[^0-9]/g,'');if(c){saveQRToGallery(c, a);}});
 
-// Fungsi untuk mendapatkan riwayat transaksi
-function getHistoryTransaction(dateParams = '', callback) {
-    $.get('/ajax/trans/getHistoryTransaction', dateParams, function(res) {
-        if (typeof callback === 'function') {
-            callback(res);
+// Tambahkan fungsi checkAndResetCanceledDeposit ke dalam fungsi yang sudah ada
+// Tambahkan di bagian yang sesuai, misalnya setelah fungsi cAQL
+const cAQL = () => {
+    const aQD = sessionStorage.getItem('activeQrData');
+    const qW = $('.qris-form-container:visible');
+    if (qW.length > 0 && aQD && Date.now() < JSON.parse(aQD).expireTime) {
+        const qD = JSON.parse(aQD);
+        if (qD.qrisString && typeof qD.initialBalance === 'number') {
+            qW.closest('.qris-cepat-wrapper-v11').find('.tab[data-target="qris"]').trigger('click');
         }
-    }).fail(function() {
-        if (typeof callback === 'function') {
-            callback({ code: 500, message: 'Gagal menghubungi server' });
-        }
-    });
-}
-
-// Fungsi untuk memeriksa status deposit dan mereset form jika deposit ditolak
-function checkDepositStatusAndResetForm(transId, formContainer) {
-    if (!transId || !formContainer) {
-        console.log('Parameter tidak valid: transId atau formContainer kosong');
-        return;
     }
 
-    console.log('Memeriksa status deposit untuk ID: ' + transId);
+    // Tambahkan pemanggilan fungsi check deposit cancel
+    checkAndResetCanceledDeposit();
+};
+});
+// Panggil fungsi checkAndResetCanceledDeposit secara berkala (setiap 30 detik)
+setInterval(checkAndResetCanceledDeposit, 30000);
 
-    // Ambil tanggal hari ini untuk pencarian dengan format yang sesuai
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-
-    // Format tanggal: DD-MM-YYYY HH:MM
-    const startDate = day + '-' + month + '-' + year + ' 00:00';
-    const endDate = day + '-' + month + '-' + year + ' ' + hours + ':' + minutes;
-
-    const dateParams = 'searchDateFrom=' + encodeURIComponent(startDate) + '&searchDateTo=' + encodeURIComponent(endDate);
-
-    $.get('/ajax/trans/getHistoryTransaction', dateParams, function(res) {
-        console.log('Respons dari server:', res);
-        if (res.code == 200 && res.data && Array.isArray(res.data)) {
-            const transaction = res.data.find(t => t.transId == transId);
-            console.log('Transaksi ditemukan:', transaction);
-
-            if (transaction) {
-                // Jika transaksi ditemukan, periksa statusnya
-                // Status yang menunjukkan bahwa deposit ditolak atau gagal
-                if (transaction.status === 'Cancel' ||
-                    transaction.statusInt === 30 ||
-                    transaction.status === 'Cancelled' ||
-                    transaction.status === 'Failed' ||
-                    transaction.status === 'Rejected') {
-                    // Reset form deposit karena deposit ditolak
-                    resetDepositForm(formContainer);
-
-                    // Hapus sessionStorage terkait dengan deposit ini
-                    const activeQrData = sessionStorage.getItem('activeQrData');
-                    if (activeQrData) {
-                        const qrData = JSON.parse(activeQrData);
-                        if (qrData.transactionId == transId) {
-                            sessionStorage.removeItem('activeQrData');
-                        }
-                    }
-
-                    // Memberi tahu pengguna bahwa deposit ditolak
-                    console.log('Deposit dengan ID ' + transId + ' telah ditolak. Form telah direset.');
-                } else {
-                    console.log('Status deposit untuk ID ' + transId + ' adalah: ' + transaction.status);
-                }
-            } else {
-                console.log('Transaksi dengan ID ' + transId + ' tidak ditemukan dalam data riwayat');
-            }
-        } else {
-            console.log('Respons tidak valid atau tidak ada data');
-        }
-    }).fail(function() {
-        console.error('Gagal menghubungi server untuk memeriksa status deposit');
-    });
-}
-
-// Fungsi untuk memantau status deposit secara berkala
-function monitorDepositStatus(transId, formContainer, interval = 10000) { // Default setiap 10 detik
-    if (!transId || !formContainer) {
-        console.log('Gagal memulai monitoring: transId atau formContainer tidak valid');
-        return;
-    }
-
-    console.log('Memulai monitoring untuk ID: ' + transId);
-
-    // Hentikan monitoring sebelumnya jika ada
-    if (window.depositMonitorInterval) {
-        clearInterval(window.depositMonitorInterval);
-    }
-
-    // Mulai monitoring status deposit
-    window.depositMonitorInterval = setInterval(function() {
-        console.log('Memeriksa status deposit untuk ID: ' + transId);
-        checkDepositStatusAndResetForm(transId, formContainer);
-    }, interval);
-
-    // Memberi tahu bahwa monitoring telah dimulai
-    console.log('Monitoring status deposit untuk ID: ' + transId + ', interval: ' + interval + 'ms');
-}
-
-// Fungsi untuk menghentikan monitoring deposit
-function stopDepositMonitoring() {
-    if (window.depositMonitorInterval) {
-        clearInterval(window.depositMonitorInterval);
-        window.depositMonitorInterval = null;
-        console.log('Monitoring deposit dihentikan');
-    }
-}
+// Juga panggil saat halaman pertama kali dimuat
+$(document).ready(function() {
+    setTimeout(checkAndResetCanceledDeposit, 2000);
+});
