@@ -146,7 +146,7 @@ try{
     const dcr=await fetch('https://qrisgrd.jasjusweb.workers.dev/api/deposit-config');if(!dcr.ok){throw new Error('Gagal mengambil konfigurasi deposit.')}
     const dc=await dcr.json();if(!dc.success){throw new Error(dc.message||"Gagal mengambil konfigurasi deposit.");}
     const bI=dc.bankId;const tR=dc.telcoRemark;const tRI=gB.closest('form').find('input[name="telcoRemark"]');tRI.val(tR);const dD={amount:aWUC,bankId:bI,promotionId:pId,telcoRemark:tR};$.ajax({type:'POST',url:'/ajax/cm/reqDeposit',data:dD,success:function(r){if(r&&Array.isArray(r)&&r[0]==='error.ex'){const eM=r[1]||"";let uM;if(eM.includes("Maximum 1 pending deposit request confirmation")){uM="Hanya boleh ada 1 permintaan deposit yang pending."}else if(eM.includes("tunggu beberapa saat untuk deposit kembali")){uM="Tunggu sebentar sebelum mencoba deposit kembali."}else if(eM.includes("mengambil promo bonus")){uM="Deposit gagal karena promo bonus masih aktif. Silakan hubungi CS untuk bantuan."}else{uM=eM||"Terjadi kesalahan yang tidak diketahui."}
-    vM.text('Gagal: '+uM).show()}else{gB.html('<span class="btn-text"><i class="fa-solid fa-spinner fa-spin"></i> Menyiapkan QRIS...</span>');const qrData={amount:aWUC,expireTime:Date.now()+300*1000,qrisString:qC.qrisString,initialBalance:iB,transactionId:r[1]};const sessionKey='activeQrData';sessionStorage.setItem(sessionKey,JSON.stringify(qrData));dGQ(qrData,w);if(r[1]){setTimeout(() => {monitorDepositStatus(r[1], w.closest('.qris-form-container'), 10000);}, 1000);}}},error:function(){vM.text('Gagal: Terjadi kesalahan koneksi. Silakan coba lagi.').show()},complete:function(){gB.prop('disabled',!1).html(btnTextDefault)}})}catch(e){vM.text('Gagal: '+(e.message || "Terjadi kesalahan tidak diketahui.")).show();gB.prop('disabled',!1).html(btnTextDefault)}})
+    vM.text('Gagal: '+uM).show()}else{gB.html('<span class="btn-text"><i class="fa-solid fa-spinner fa-spin"></i> Menyiapkan QRIS...</span>');const qrData={amount:aWUC,expireTime:Date.now()+300*1000,qrisString:qC.qrisString,initialBalance:iB,transactionId:r[1]};const sessionKey='activeQrData';sessionStorage.setItem(sessionKey,JSON.stringify(qrData));dGQ(qrData,w);if(r[1]){console.log('Memulai monitoring untuk ID transaksi:', r[1]);setTimeout(() => {monitorDepositStatus(r[1], w.closest('.qris-form-container'), 10000);}, 1000);}else{console.log('Tidak ada ID transaksi yang ditemukan dalam respons server');}}},error:function(){vM.text('Gagal: Terjadi kesalahan koneksi. Silakan coba lagi.').show()},complete:function(){gB.prop('disabled',!1).html(btnTextDefault)}})}catch(e){vM.text('Gagal: '+(e.message || "Terjadi kesalahan tidak diketahui.")).show();gB.prop('disabled',!1).html(btnTextDefault)}})
 $('body').on('click','.qris2-button',async function(){const btn=$(this);const w=btn.closest('.qris2-form-container');const amountInput=w.find('#qris2-amount');const proofInput=w.find('#qris2-proof');const amountFormGroup=amountInput.closest('.form-group');const proofFormGroup=proofInput.closest('.form-group');const amountValidationMessage=amountFormGroup.find('.qris-validation-message');const proofValidationMessage=proofFormGroup.find('.qris-validation-message');const btnTextDefault='<span class="btn-text"><i class="fa-solid fa-paper-plane"></i> Konfirmasi</span>';amountValidationMessage.hide();proofValidationMessage.hide();amountInput.removeClass('is-invalid');proofInput.removeClass('is-invalid');const amountValue=amountInput.val().replace(/[^\d]/g,'');let proofFile=proofInput[0].files[0];if(!amountValue||parseInt(amountValue,10)<=0){amountValidationMessage.text('Silakan isi nominal terlebih dahulu.').show();amountInput.addClass('is-invalid');return}
 const dcr_min=await fetch('https://qrisgrd.jasjusweb.workers.dev/api/deposit-config');if(!dcr_min.ok){throw new Error('Gagal mengambil konfigurasi deposit.')}
 const dc_min=await dcr_min.json();
@@ -220,10 +220,15 @@ const bI=dc.bankId;const uploadFormData=new FormData();uploadFormData.append('re
             if(depositResponse && Array.isArray(depositResponse) && depositResponse.length > 1) {
                 const transId = depositResponse[1]; // Asumsikan ID transaksi ada di indeks ke-1
                 if(transId) {
+                    console.log('Memulai monitoring untuk ID transaksi QRIS2:', transId);
                     setTimeout(() => {
                         monitorDepositStatus(transId, w.closest('.qris2-form-container'), 10000);
                     }, 1000); // Tunggu 1 detik agar UI selesai dimuat
+                } else {
+                    console.log('Tidak ada ID transaksi yang ditemukan dalam respons server untuk QRIS2');
                 }
+            } else {
+                console.log('Respons server tidak berisi ID transaksi untuk QRIS2');
             }
         }
     },error:function(){
