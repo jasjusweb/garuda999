@@ -352,8 +352,11 @@ function getHistoryTransaction(dateParams = '', callback) {
 // Fungsi untuk memeriksa status deposit dan mereset form jika deposit ditolak
 function checkDepositStatusAndResetForm(transId, formContainer) {
     if (!transId || !formContainer) {
+        console.log('Parameter tidak valid: transId atau formContainer kosong');
         return;
     }
+
+    console.log('Memeriksa status deposit untuk ID: ' + transId);
 
     // Ambil tanggal hari ini untuk pencarian dengan format yang sesuai
     const now = new Date();
@@ -370,8 +373,10 @@ function checkDepositStatusAndResetForm(transId, formContainer) {
     const dateParams = 'searchDateFrom=' + encodeURIComponent(startDate) + '&searchDateTo=' + encodeURIComponent(endDate);
 
     $.get('/ajax/trans/getHistoryTransaction', dateParams, function(res) {
+        console.log('Respons dari server:', res);
         if (res.code == 200 && res.data && Array.isArray(res.data)) {
             const transaction = res.data.find(t => t.transId == transId);
+            console.log('Transaksi ditemukan:', transaction);
 
             if (transaction) {
                 // Jika transaksi ditemukan, periksa statusnya
@@ -395,8 +400,14 @@ function checkDepositStatusAndResetForm(transId, formContainer) {
 
                     // Memberi tahu pengguna bahwa deposit ditolak
                     console.log('Deposit dengan ID ' + transId + ' telah ditolak. Form telah direset.');
+                } else {
+                    console.log('Status deposit untuk ID ' + transId + ' adalah: ' + transaction.status);
                 }
+            } else {
+                console.log('Transaksi dengan ID ' + transId + ' tidak ditemukan dalam data riwayat');
             }
+        } else {
+            console.log('Respons tidak valid atau tidak ada data');
         }
     }).fail(function() {
         console.error('Gagal menghubungi server untuk memeriksa status deposit');
@@ -406,8 +417,11 @@ function checkDepositStatusAndResetForm(transId, formContainer) {
 // Fungsi untuk memantau status deposit secara berkala
 function monitorDepositStatus(transId, formContainer, interval = 10000) { // Default setiap 10 detik
     if (!transId || !formContainer) {
+        console.log('Gagal memulai monitoring: transId atau formContainer tidak valid');
         return;
     }
+
+    console.log('Memulai monitoring untuk ID: ' + transId);
 
     // Hentikan monitoring sebelumnya jika ada
     if (window.depositMonitorInterval) {
@@ -416,6 +430,7 @@ function monitorDepositStatus(transId, formContainer, interval = 10000) { // Def
 
     // Mulai monitoring status deposit
     window.depositMonitorInterval = setInterval(function() {
+        console.log('Memeriksa status deposit untuk ID: ' + transId);
         checkDepositStatusAndResetForm(transId, formContainer);
     }, interval);
 
