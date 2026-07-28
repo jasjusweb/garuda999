@@ -15,6 +15,19 @@ function generateQrisPayload(o,a){function c(d){let c=0xFFFF;for(let b=0;b<d.len
 return('0000'+(c&0xFFFF).toString(16).toUpperCase()).slice(-4)}
 const t='5802ID';const i=o.indexOf(t);if(i===-1)throw new Error("Format qrisString tidak valid.");const p=o.substring(0,i);const s=o.substring(i);const m=a.toString();const l=m.length.toString().padStart(2,'0');const n=`54${l}${m}`;const r=`${p}${n}${s}6304`;const u=c(r);return `${p}${n}${s}6304${u}`}
 /* api4.js is often loaded with async before jQuery — wait so tabs always inject */
+function isQrisDepositPage(){
+const p=(location.pathname||'').toLowerCase();
+if(/withdraw|penarikan|withdrawal/.test(p))return false;
+return /\/deposit(?:\/|$)/.test(p)||/\/setoran(?:\/|$)/.test(p);
+}
+function cleanupQrisDepositInject($){
+if(!$||!$.fn)return;
+$('.qris-cepat-wrapper-v11').each(function(){
+const w=$(this);const form=w.closest('form');
+w.remove();
+if(form.length){form.find('.manual-form-container-v11').each(function(){$(this).children().unwrap()})}
+});
+}
 function bootQrisCepatWhenReady(){
   const run=function(){
     ensureQrisFontAwesome();
@@ -59,9 +72,16 @@ window.qrisUniqueCodeLength = dc.uniqueCodeLength || 2;
 
 const bankId=dc.bankId;$.ajax({url:'/ajax/credit/getDepositPromotion',type:'GET',dataType:'json',data:{bankId:bankId},success:function(response){promoSelect.empty();if(response&&response[0]==='success'&&response[1].length>0){promoSelect.prop('disabled',false);promoSelect.append('<option value="">-- Tanpa Bonus --</option>');response[1].forEach(p=>{const promoId=p[0];const promoName=String(p[1]||'').replace(/</g,'&lt;');const optionHtml=`<option value="${promoId}">${promoName}</option>`;promoSelect.append(optionHtml)})}else{promoSelect.prop('disabled',true);promoSelect.append('<option value="">Tidak ada promosi yang tersedia</option>')}},error:function(){promoSelect.empty();promoSelect.prop('disabled',true);promoSelect.append('<option value="">Gagal memuat promosi</option>')}});}catch(error){promoSelect.empty();promoSelect.prop('disabled',true);promoSelect.append('<option value="">Gagal mengambil konfigurasi</option>');console.error('Error loading promotions:',error);}}
 function findDepositForms($){
-return $('form[action="/ajax/cm/reqDeposit"], form[action*="reqDeposit"], #confirm-form, #confirm-form-2').filter(function(){const a=($(this).attr('action')||'');return !a||a.indexOf('reqDeposit')!==-1||this.id==='confirm-form'||this.id==='confirm-form-2'});
+if(!isQrisDepositPage())return $();
+return $('form[action="/ajax/cm/reqDeposit"], form[action*="reqDeposit"], #confirm-form, #confirm-form-2').filter(function(){
+const a=($(this).attr('action')||'');
+if(a.indexOf('reqDeposit')!==-1)return true;
+if(this.id==='confirm-form'||this.id==='confirm-form-2')return true;
+return false;
+});
 }
 function restoreActiveQrIfNeeded($){
+if(!isQrisDepositPage())return;
 if(window.qrisDepoTabsVisible===false)return;
 const aQD=sessionStorage.getItem('activeQrData');
 if(!aQD)return;
@@ -70,6 +90,7 @@ const qW=$('.qris-cepat-wrapper-v11:visible .qris-form-container').first();
 if(qW.length){qW.closest('.qris-cepat-wrapper-v11').find('.tab[data-target="qris"]').trigger('click')}
 }
 function injectQrisDepositForms($){
+if(!isQrisDepositPage()){cleanupQrisDepositInject($);return}
 findDepositForms($).each(function(){const cF=$(this);if(cF.find('.qris-cepat-wrapper-v11').length===0){const mFC=cF.children().wrapAll('<div class="manual-form-container-v11"></div>').parent();cF.prepend(hM);mFC.show();cF.find('.tab[data-target=manual]').addClass('active');loadPromotions(cF)}});
 setTimeout(function(){restoreActiveQrIfNeeded($)},300);
 }
