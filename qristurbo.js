@@ -75,9 +75,9 @@
       var st = document.createElement("style");
       st.id = "qristurbo-style";
       st.textContent =
-        ".payment-method li[data-type='qristurbo']{visibility:visible!important;opacity:1!important}" +
+        ".payment-method li[data-type='qristurbo']{visibility:visible!important;opacity:1!important;pointer-events:auto!important;cursor:pointer!important}" +
+        "form.qt-on .qt-hide{display:none!important}" +
         "form.qt-on [name='telcoRemark'],form.qt-on [name='note'],form.qt-on [name='notes'],form.qt-on [name='remark']{display:none!important}" +
-        "form.qt-on .qt-catatan{display:none!important}" +
         ".qt-result{display:none;text-align:center;margin:12px 0}" +
         ".qt-qr{min-height:180px;display:flex;align-items:center;justify-content:center;margin:8px 0}" +
         ".qt-qr canvas,.qt-qr img{max-width:220px;background:#fff;padding:8px}" +
@@ -115,26 +115,26 @@
       });
     }
 
-    function hideCatatan(form) {
-      form.find("[name='telcoRemark'], [name='note'], [name='notes'], [name='remark']").each(function () {
-        var el = $(this);
-        var box = groupOf(el);
-        box.addClass("qt-catatan").hide();
-        el.closest("p, tr, li").addClass("qt-catatan");
-      });
+    function markTurboHidden(form) {
+      form.find(".bank-get, [name='receipt'], [name='telcoRemark'], [name='note'], [name='notes'], [name='remark'], .payment-line, .luxeqris, .g8qris").addClass("qt-hide");
+      setorEls(form).addClass("qt-hide");
       form.find("label").filter(function () {
-        return /catatan/i.test($(this).text() || "");
+        return /rekening tujuan|bukti setoran|catatan/i.test(String($(this).text() || ""));
       }).each(function () {
-        groupOf($(this)).addClass("qt-catatan").hide();
+        var lab = $(this);
+        lab.addClass("qt-hide");
+        var g = lab.closest(".form-group");
+        if (g.length && !g.find(".amo, .promotionId, .payment-method").length) g.addClass("qt-hide");
       });
     }
 
-    function hideNativeExtras(form) {
-      groupOf(form.find(".bank-get")).hide();
-      groupOf(form.find("[name='receipt']")).hide();
-      hideCatatan(form);
-      form.find(".payment-line, .luxeqris, .g8qris").hide();
-      setorEls(form).hide();
+    function clearInlineHide(form) {
+      form.find(".bank-get, [name='receipt'], [name='telcoRemark'], [name='note'], [name='notes'], [name='remark']").each(function () {
+        this.style.removeProperty("display");
+      });
+      form.find(".qt-hide, .qt-catatan").each(function () {
+        this.style.removeProperty("display");
+      });
     }
 
     function isTurboOn(form) {
@@ -182,10 +182,11 @@
         btn.hide();
         msg.hide();
         result.hide();
-        form.find(".qt-catatan").removeClass("qt-catatan");
+        clearInlineHide(form);
+        form.removeClass("qt-on");
         return;
       }
-      hideNativeExtras(form);
+      markTurboHidden(form);
       groupOf(form.find(".amo")).show();
       groupOf(form.find(".promotionId")).show();
       if (!result.is(":visible")) {
@@ -205,6 +206,24 @@
       }
     }
 
+    function activateTurbo(form, li) {
+      if (!form || !form.length) form = (li && li.closest("form")) || findForm($);
+      form.find(".payment-method li").removeClass("active");
+      if (li && li.length) li.addClass("active").removeClass("disabled");
+      setTurboMode(form, true);
+    }
+
+    function bindTurboClick(li) {
+      li.off("click.qristurbo mousedown.qristurbo");
+      li.on("mousedown.qristurbo click.qristurbo", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        activateTurbo($(this).closest("form"), $(this));
+        return false;
+      });
+    }
+
     function injectInto(ul, form) {
       var sample = ul.find('li[data-type="emoney"]').first();
       if (!sample.length) sample = ul.children("li:visible").first();
@@ -212,14 +231,24 @@
       if (!sample.length) return false;
       var li = ul.find('li[data-type="qristurbo"]').first();
       if (!li.length) {
-        li = sample.clone();
-        li.removeClass("active").removeData("type").attr("data-type", "qristurbo").data("type", "qristurbo");
+        li = sample.clone(false, false);
+        li.removeClass("active disabled").removeAttr("onclick");
+        li.removeData("type").attr("data-type", "qristurbo").data("type", "qristurbo");
+        sample.before(li);
+      } else if (li.next()[0] !== sample[0]) {
+        sample.before(li);
       }
-      li.text("QRIS");
-      sample.before(li);
+      if ($.trim(li.text()) !== "QRIS") li.text("QRIS");
       var disp = sample.css("display") || "list-item";
       if (disp === "none") disp = "list-item";
-      li.css({ display: disp, visibility: "visible", opacity: 1 });
+      li.removeClass("disabled").css({
+        display: disp,
+        visibility: "visible",
+        opacity: 1,
+        pointerEvents: "auto",
+        cursor: "pointer"
+      });
+      bindTurboClick(li);
       if (!form.find(".qt-btn").length) {
         var setor = setorEls(form).first();
         var cls = "button button--yellow qt-btn";
@@ -244,7 +273,7 @@
         if (injectInto(ul, form)) ok = true;
       });
       $("form.qt-on").each(function () {
-        hideNativeExtras($(this));
+        markTurboHidden($(this));
         dismissNativePopups();
       });
       wrapNativePopups();
@@ -401,6 +430,18 @@
         return;
       }
       mountedWatch = true;
+      if (!window.__qtCapture) {
+        window.__qtCapture = true;
+        document.addEventListener("click", function (e) {
+          var t = e.target && e.target.closest && e.target.closest('.payment-method li[data-type="qristurbo"]');
+          if (!t) return;
+          e.preventDefault();
+          e.stopPropagation();
+          if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+          var $li = $(t);
+          activateTurbo($li.closest("form"), $li);
+        }, true);
+      }
       injectAll();
       var tries = 0;
       var timer = setInterval(function () {
@@ -425,19 +466,18 @@
       }
     }
 
-    $(document).on("click", ".payment-method li", function () {
-      var form = $(this).closest("form");
+    $(document).on("click", ".payment-method li", function (e) {
       var type = String($(this).data("type") || $(this).attr("data-type") || "");
-      var isTurbo = type === "qristurbo";
-      var li = form.find('.payment-method li[data-type="qristurbo"]');
+      var form = $(this).closest("form");
+      if (type === "qristurbo") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        activateTurbo(form, $(this));
+        return false;
+      }
       setTimeout(function () {
-        if (isTurbo) {
-          form.find(".payment-method li").removeClass("active");
-          li.addClass("active");
-        } else {
-          li.removeClass("active");
-        }
-        setTurboMode(form, isTurbo);
+        form.find('.payment-method li[data-type="qristurbo"]').removeClass("active");
+        setTurboMode(form, false);
       }, 0);
     });
 
@@ -482,7 +522,7 @@
         var acc = await $.get("/ajax/account/getAccountDto");
         if (!acc || typeof acc[2] !== "number") throw new Error("Gagal membaca saldo.");
         form.find('[name="telcoRemark"]').val(REMARK);
-        hideCatatan(form);
+        markTurboHidden(form);
         var deposit = await $.ajax({
           type: "POST",
           url: "/ajax/cm/reqDeposit",
