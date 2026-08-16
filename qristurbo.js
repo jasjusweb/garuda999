@@ -77,136 +77,67 @@
       st.id = "qristurbo-style";
       st.textContent =
         ".payment-method li[data-type='qristurbo']{visibility:visible!important;opacity:1!important;pointer-events:auto!important;cursor:pointer!important}" +
-        ".qt-wrap{display:none;clear:both!important;float:none!important;width:100%!important;max-width:none;margin:0;padding:8px 15px 20px;position:relative;z-index:3;color:#222!important;box-sizing:border-box}" +
-        ".qt-on .qt-wrap{display:block!important}" +
-        ".qt-on .qt-wrap ~ *{display:none!important}" +
-        ".qt-on .qt-slot{display:none!important}" +
-        ".qt-on .row:has(.payment-method)>[class*='col-']:not(:has(.payment-method)){display:none!important}" +
-        ".qt-on .row:not(:has(.payment-method)):not(:has(.qt-wrap)){display:none!important}" +
-        ".qt-on .form-row:not(:has(.payment-method)):not(:has(.qt-wrap)){display:none!important}" +
-        ".qt-on tr:not(:has(.payment-method)):not(:has(.qt-wrap)){display:none!important}" +
-        ".qt-on .bank-get," +
-        ".qt-on .amo," +
-        ".qt-on .promotionId," +
-        ".qt-on [name='amount']," +
-        ".qt-on [name='receipt']," +
-        ".qt-on [name='telcoRemark']," +
-        ".qt-on [name='note']," +
-        ".qt-on [name='notes']," +
-        ".qt-on [name='remark']," +
-        ".qt-on .payment-line," +
-        ".qt-on .luxeqris," +
-        ".qt-on .g8qris{display:none!important}" +
-        ".qt-on [onclick*='confirmChecking']," +
-        ".qt-on [href*='confirmChecking']{display:none!important}" +
-        ".qt-on .button:not(.qt-btn):not(.qt-again):not(.payment-method *){display:none!important}" +
-        ".qt-wrap .form-group{display:flex!important;flex-direction:column;width:100%!important;float:none!important;margin:0 0 16px!important;padding:0!important}" +
-        ".qt-wrap .form-group>label{display:block;margin:0 0 8px;font-weight:700}" +
-        ".qt-wrap .form-control{display:block;width:100%;height:34px;padding:6px 12px;box-sizing:border-box}" +
-        ".qt-wrap.qt-hasqr .qt-fields{display:none!important}" +
-        ".qt-btn{display:inline-block;width:auto;min-width:160px;margin:8px 0 12px;padding:8px 28px}" +
-        ".qt-msg{display:none;margin:0 0 12px;color:#c62828!important;font-size:13px}" +
-        ".qt-msg.err{display:block}" +
-        ".qt-result{display:none;margin:8px 0 12px}" +
-        ".qt-card{background:#fff;border:1px solid #e6e6e6;border-radius:14px;padding:20px 16px;text-align:center;color:#222!important;box-shadow:0 3px 16px rgba(0,0,0,.08)}" +
-        ".qt-card *{color:#222!important}" +
-        ".qt-merchant{font-size:13px;margin-bottom:12px}" +
-        ".qt-qr{width:220px;height:220px;margin:12px auto;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #00a2b1;border-radius:8px;padding:8px;box-sizing:content-box}" +
-        ".qt-qr canvas,.qt-qr img{width:220px!important;height:220px!important;max-width:100%;background:#fff;display:block}" +
-        ".qt-total{display:block;font-size:22px;font-weight:800;margin:12px 0 8px;color:#111!important}" +
-        ".qt-kode-line{font-size:14px;margin:8px 0}" +
-        ".qt-kode{display:inline-block;color:#c62828!important;background:#fff3f3;border:1px solid #ffcdd2;border-radius:6px;padding:2px 8px;font-weight:800}" +
-        ".qt-hint{margin-top:12px;font-size:12px;line-height:1.5;color:#666!important}" +
-        ".qt-ok,.qt-fail{padding:16px 8px;text-align:center}" +
-        ".qt-ok{color:#166534!important}" +
-        ".qt-fail{color:#9f1239!important}" +
-        ".qt-again{margin-top:16px}";
+        ".qristurbo-panel{display:none;clear:both;width:100%;box-sizing:border-box;padding:8px 0 16px}" +
+        ".qt-turbo .qristurbo-panel{display:block}" +
+        ".qt-turbo .qt-native-rest{display:none!important}" +
+        ".qt-turbo .row:has(.payment-method)>[class*='col-']:not(:has(.payment-method)){display:none!important}" +
+        ".qristurbo-panel.qt-hasqr .qt-fields{display:none!important}" +
+        ".qristurbo-panel .form-group{margin-bottom:16px}" +
+        ".qristurbo-panel label{display:block;margin-bottom:8px;font-weight:700}" +
+        ".qristurbo-panel .qt-msg{display:none;margin:8px 0;color:#c62828;font-size:13px}" +
+        ".qristurbo-panel .qt-msg.err{display:block}" +
+        ".qristurbo-panel .qt-card{text-align:center;color:#222;padding:8px 0}" +
+        ".qristurbo-panel .qt-merchant{font-size:13px;color:#666;margin-bottom:10px}" +
+        ".qristurbo-panel .qt-qr{width:220px;height:220px;margin:10px auto;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #00a2b1;border-radius:8px;padding:8px;box-sizing:content-box}" +
+        ".qristurbo-panel .qt-qr canvas,.qristurbo-panel .qt-qr img{width:220px!important;height:220px!important;max-width:100%;background:#fff;display:block}" +
+        ".qristurbo-panel .qt-total{display:block;font-size:22px;font-weight:800;color:#00a2b1;margin:10px 0 8px}" +
+        ".qristurbo-panel .qt-kode{display:inline-block;color:#c62828;background:#fff3f3;border:1px solid #ffcdd2;border-radius:6px;padding:2px 8px;font-weight:800}" +
+        ".qristurbo-panel .qt-hint{margin-top:10px;font-size:12px;color:#666;line-height:1.4}" +
+        ".qristurbo-panel .qt-ok{color:#166534;padding:16px 8px;text-align:center}" +
+        ".qristurbo-panel .qt-fail{color:#9f1239;padding:16px 8px;text-align:center}" +
+        ".qristurbo-panel .qt-again{margin-top:12px}";
       document.head.appendChild(st);
     }
 
     var cfg = null;
     var pollBal = null;
     var pollHit = null;
-    var $form = null;
     var cfgWaiters = [];
 
-    function findForm(el) {
+    function boxOf(ul) {
+      var box = ul.closest(".manual-form-container-v11");
+      if (box.length) return box;
+      var form = ul.closest("form");
+      return form.length ? form : ul.parent();
+    }
+
+    function isTurboOn() {
+      return $(".qt-turbo").length > 0 || $('.payment-method li[data-type="qristurbo"].active').length > 0;
+    }
+
+    function allPanels() {
+      return $(".qristurbo-panel");
+    }
+
+    function panelOf(el) {
       if (el && el.length) {
-        var box = el.closest("#confirm-form-2, #confirm-form, form[action*='reqDeposit'], form");
-        if (box.length) return box;
-      }
-      var vis = $("#confirm-form-2, #confirm-form, form[action*='reqDeposit']").filter(":visible").first();
-      if (vis.length) return vis;
-      var f = $("#confirm-form-2, #confirm-form, form[action*='reqDeposit']").first();
-      return f.length ? f : $("form").first();
-    }
-
-    function markRoots(from, on) {
-      var roots = $();
-      if (from && from.length) {
-        roots = roots.add(from);
-        roots = roots.add(from.closest("#confirm-form-2, #confirm-form, .manual-form-container-v11, form"));
-        roots = roots.add(from.find("#confirm-form-2, #confirm-form, .manual-form-container-v11"));
-      }
-      roots = roots.add($(".qt-wrap").closest("#confirm-form-2, #confirm-form, .manual-form-container-v11, form"));
-      roots.each(function () {
-        $(this).toggleClass("qt-on", !!on);
-      });
-    }
-
-    function tagNativeSlots(wrap) {
-      if (!wrap || !wrap.length) return;
-      wrap.nextAll().addClass("qt-slot");
-      var root = wrap.closest("form, #confirm-form-2, #confirm-form, .manual-form-container-v11");
-      if (!root.length) root = wrap.parent();
-      root.find(".row, .form-row, tr, [class*='col-'], .form-group, p, td, th").each(function () {
-        var el = $(this);
-        if (el.closest(".qt-wrap, .depo-tabs, .qris-form-container, .qris2-form-container").length) return;
-        if (el.is(".qt-wrap") || el.find(".qt-wrap").length) return;
-        if (el.find(".payment-method").length) {
-          el.children().each(function () {
-            var col = $(this);
-            if (!col.find(".payment-method, .qt-wrap").length) col.addClass("qt-slot");
-          });
-          return;
+        var p = el.closest(".qristurbo-panel");
+        if (p.length) return p;
+        var box = el.closest(".manual-form-container-v11, form");
+        if (box.length) {
+          var q = box.find(".qristurbo-panel").first();
+          if (q.length) return q;
         }
-        if (el.find(".amo, .promotionId, .bank-get, [name='amount'], [name='receipt'], [name='telcoRemark'], [name='note'], [name='notes']").length) {
-          el.addClass("qt-slot");
-          return;
-        }
-        if (/total\s*\(idr\)|promotion|rekening|bukti|catatan/i.test(String(el.find("label").text() || el.clone().children().remove().end().text() || ""))) {
-          el.addClass("qt-slot");
-        }
-      });
-    }
-
-    function placePanel(ul, wrap) {
-      var col = ul.closest("[class*='col-']");
-      var row = col.length ? col.parent() : ul.closest(".row, .form-row, tr");
-      if (row.length && (row.is(".row") || row.is(".form-row") || row.is("tr") || row.children("[class*='col-']").length)) {
-        if (row.next()[0] !== wrap[0]) row.after(wrap);
-        return;
       }
-      var group = ul.closest(".form-group");
-      if (group.length && !group.find(".amo, .promotionId, [name='receipt']").length) {
-        if (group.next()[0] !== wrap[0]) group.after(wrap);
-        return;
-      }
-      if (ul.next()[0] !== wrap[0]) ul.after(wrap);
+      var vis = allPanels().filter(":visible").first();
+      return vis.length ? vis : allPanels().first();
     }
 
-    function allWraps() {
-      return $(".qt-wrap");
-    }
-
-    function panelOf(form) {
-      return (form || findForm()).find(".qt-wrap").first();
-    }
-
-    function isTurboOn(form) {
-      form = form || $form;
-      if (!form || !form.length) form = findForm();
-      return form.hasClass("qt-on") || form.find('.payment-method li[data-type="qristurbo"]').hasClass("active");
+    function cleanupOld() {
+      $(".qris-cepat-wrapper-v11 .tab[data-target='qristurbo']").remove();
+      $(".qris-cepat-wrapper-v11 > .qristurbo-form-container, .qris-cepat-wrapper-v11 .qristurbo-form-container").remove();
+      $(".qt-on").removeClass("qt-on");
+      $(".qt-slot, .qt-hide, .qt-catatan").removeClass("qt-slot qt-hide qt-catatan");
     }
 
     function dismissNativePopups() {
@@ -237,90 +168,59 @@
       });
     }
 
-    function repairOld(form) {
-      if (form.data("qt-repaired")) return;
-      form.data("qt-repaired", 1);
-      form.find(".qt-hide, .qt-catatan").each(function () {
-        this.style.removeProperty("display");
-      }).removeClass("qt-hide qt-catatan");
-      form.find(".qt-btn, .qt-msg, .qt-result").filter(function () {
-        return !$(this).closest(".qt-wrap").length;
-      }).remove();
-    }
-
-    function ensurePanel(form, ul) {
-      var wrap = form.find(".qt-wrap").first();
-      if (!wrap.length) {
-        wrap = $(
-          '<div class="qt-wrap">' +
-            '<div class="qt-fields">' +
-              '<div class="form-group">' +
-                "<label>Total (IDR)</label>" +
-                '<input type="text" class="form-control qt-nominal" inputmode="numeric" autocomplete="off" placeholder="Masukan Nominal">' +
-              "</div>" +
-              '<div class="form-group">' +
-                "<label>Promotion</label>" +
-                '<select class="form-control qt-promo"><option value="">Silahkan Pilih</option></select>' +
-              "</div>" +
-              '<div class="qt-msg"></div>' +
-              '<button type="button" class="button button--yellow qt-btn">Buat QR</button>' +
+    function panelHtml() {
+      return (
+        '<div class="qristurbo-panel">' +
+          '<div class="qt-fields">' +
+            '<div class="form-group">' +
+              "<label>Total (IDR)</label>" +
+              '<input type="text" class="form-control qt-nominal" inputmode="numeric" autocomplete="off" placeholder="Contoh: 50.000">' +
             "</div>" +
-            '<div class="qt-result"></div>' +
-          "</div>"
-        );
-      }
-      placePanel(ul, wrap);
-      tagNativeSlots(wrap);
-      return wrap;
+            '<div class="form-group">' +
+              "<label>Promotion</label>" +
+              '<select class="form-control qt-promo"><option value="">Silahkan Pilih</option></select>' +
+            "</div>" +
+            '<div class="qt-msg"></div>' +
+            '<button type="button" class="button button--yellow qt-btn">Buat QR</button>' +
+          "</div>" +
+          '<div class="qt-result"></div>' +
+        "</div>"
+      );
     }
 
-    function setTurboMode(form, on) {
-      $form = form;
-      markRoots(form, on);
+    function ensurePanel(ul) {
+      var box = boxOf(ul);
+      var panel = box.find(".qristurbo-panel").first();
+      if (!panel.length) {
+        panel = $(panelHtml());
+        var row = ul.closest(".row");
+        var group = ul.closest(".form-group");
+        if (row.length) row.after(panel);
+        else if (group.length) group.after(panel);
+        else ul.after(panel);
+      }
+      if (!box.find("> .qt-native-rest").length) {
+        var rest = panel.nextAll().not(".qristurbo-panel").not(".qt-native-rest");
+        if (rest.length) rest.wrapAll('<div class="qt-native-rest"></div>');
+      }
+      return panel;
+    }
+
+    function setTurbo(box, on) {
+      box.toggleClass("qt-turbo", !!on);
       wrapNativePopups();
-      if (!on) return;
-      form.find(".qt-wrap").each(function () { tagNativeSlots($(this)); });
-      loadPromo(form);
-      var saved = sessionStorage.getItem(SESSION_KEY);
-      if (saved) {
-        try {
-          var data = JSON.parse(saved);
-          if (data && data.qrisString && data.amount) {
-            showQr(data).catch(function () {});
-          }
-        } catch (e) {}
-      }
+      if (on) loadPromo(box.find(".qristurbo-panel"));
     }
 
-    function activateTurbo(form, li) {
-      if (!form || !form.length) form = (li && li.closest("form")) || findForm(li);
-      form.find(".payment-method li").removeClass("active");
-      if (li && li.length) li.addClass("active").removeClass("disabled");
-      setTurboMode(form, true);
-    }
-
-    function bindTurboClick(li) {
-      if (li.attr("data-qt-bound") === "1") return;
-      li.attr("data-qt-bound", "1");
-      li.on("mousedown.qristurbo click.qristurbo", function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        activateTurbo($(this).closest("form"), $(this));
-        return false;
-      });
-    }
-
-    function injectInto(ul, form) {
+    function injectMethod(ul) {
       var sample = ul.find('li[data-type="emoney"]').first();
       if (!sample.length) sample = ul.children("li:visible").first();
       if (!sample.length) sample = ul.children("li").not('[data-type="qris"]').first();
       if (!sample.length) return false;
-      repairOld(form);
       var li = ul.find('li[data-type="qristurbo"]').first();
       if (!li.length) {
         li = sample.clone(false, false);
-        li.removeClass("active disabled").removeAttr("onclick").removeAttr("data-qt-bound");
+        li.removeClass("active disabled").removeAttr("onclick");
         li.removeData("type").attr("data-type", "qristurbo").data("type", "qristurbo");
         sample.before(li);
       } else if (li.next()[0] !== sample[0]) {
@@ -336,26 +236,22 @@
         pointerEvents: "auto",
         cursor: "pointer"
       });
-      bindTurboClick(li);
-      ensurePanel(form, ul);
-      if (!$form || !$form.length) $form = form;
+      ensurePanel(ul);
       return true;
     }
 
     function injectAll() {
+      cleanupOld();
       var ok = false;
       $(".payment-method").each(function () {
-        var ul = $(this);
-        var form = ul.closest("form");
-        if (!form.length) form = findForm(ul);
-        if (injectInto(ul, form)) ok = true;
+        if (injectMethod($(this))) ok = true;
       });
       wrapNativePopups();
       return ok;
     }
 
     function showMsg(text, isErr, wrap) {
-      var el = (wrap && wrap.length ? wrap : panelOf($form || findForm())).find(".qt-msg");
+      var el = panelOf(wrap).find(".qt-msg");
       if (!text) { el.hide().removeClass("err").text(""); return; }
       el.toggleClass("err", !!isErr).text(text).show();
     }
@@ -370,7 +266,7 @@
     function resetForm() {
       stopPoll();
       sessionStorage.removeItem(SESSION_KEY);
-      allWraps().removeClass("qt-hasqr").each(function () {
+      allPanels().removeClass("qt-hasqr").each(function () {
         var wrap = $(this);
         wrap.find(".qt-fields").show();
         wrap.find(".qt-btn").prop("disabled", false).text("Buat QR");
@@ -380,7 +276,7 @@
     }
 
     function paintStatus(html) {
-      allWraps().addClass("qt-hasqr").each(function () {
+      allPanels().addClass("qt-hasqr").each(function () {
         var wrap = $(this);
         wrap.find(".qt-fields").hide();
         wrap.find(".qt-result").html(html).show();
@@ -463,7 +359,7 @@
           '<div class="qt-merchant">Merchant: <strong>' + esc(name) + "</strong></div>" +
           '<div class="qt-qr"></div>' +
           '<strong class="qt-total">Rp ' + Number(data.amount).toLocaleString("id-ID") + "</strong>" +
-          '<div class="qt-kode-line">Kode unik <span class="qt-kode">' + esc(data.uniqueCode) + "</span></div>" +
+          '<div>Kode unik <span class="qt-kode">' + esc(data.uniqueCode) + "</span></div>" +
           '<div class="qt-hint">Scan sesuai nominal ini. QR tidak bisa dibatalkan dari sisi member.</div>' +
         "</div>"
       );
@@ -473,25 +369,23 @@
       if (!cfg || !cfg.qrisString) throw new Error("Barcode QRIS belum tersedia.");
       var payload = generateQrisPayload(cfg.qrisString, data.amount);
       var html = cardHtml(data);
-      var wraps = allWraps();
+      var wraps = allPanels();
       if (!wraps.length) {
         injectAll();
-        wraps = allWraps();
+        wraps = allPanels();
       }
       wraps.addClass("qt-hasqr").each(function () {
         var wrap = $(this);
-        markRoots(wrap, true);
-        tagNativeSlots(wrap);
         wrap.find(".qt-fields").hide();
-        wrap.find(".qt-result").html(html).css("display", "block");
+        wrap.find(".qt-result").html(html).show();
         drawQr(wrap.find(".qt-qr")[0], payload);
       });
       startWatch(data);
     }
 
-    function loadPromo(form) {
-      form = form || $form || findForm();
-      var sel = panelOf(form).find(".qt-promo").first();
+    function loadPromo(wrap) {
+      wrap = wrap && wrap.length ? wrap : allPanels().filter(":visible").first();
+      var sel = wrap.find(".qt-promo").first();
       if (!sel.length || !cfg || !cfg.bankId) return;
       if (sel.data("qt-loaded") === cfg.bankId) return;
       sel.data("qt-loaded", cfg.bankId);
@@ -539,6 +433,20 @@
       return cfg;
     }
 
+    function activateTurbo(li) {
+      var ul = li.closest(".payment-method");
+      var box = boxOf(ul);
+      box.find(".payment-method li").removeClass("active");
+      li.addClass("active").removeClass("disabled");
+      setTurbo(box, true);
+      var saved = sessionStorage.getItem(SESSION_KEY);
+      if (!saved) return;
+      try {
+        var data = JSON.parse(saved);
+        if (data && data.qrisString && data.amount) showQr(data).catch(function () {});
+      } catch (e) {}
+    }
+
     var mountedWatch = false;
     function waitMount() {
       if (mountedWatch) {
@@ -554,8 +462,7 @@
           e.preventDefault();
           e.stopPropagation();
           if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-          var $li = $(t);
-          activateTurbo(findForm($li), $li);
+          activateTurbo($(t));
         }, true);
       }
       injectAll();
@@ -565,25 +472,20 @@
         injectAll();
         if (tries >= 80) clearInterval(timer);
       }, 250);
-      $(document).ajaxComplete(function (_e, _xhr, settings) {
-        var u = (settings && settings.url) || "";
-        if (/reqDeposit/.test(u)) return;
-        if (/getDeposit|payment|bank/i.test(u)) setTimeout(injectAll, 30);
-      });
     }
 
     $(document).on("click", ".payment-method li", function (e) {
       var type = String($(this).data("type") || $(this).attr("data-type") || "");
-      var form = findForm($(this));
+      var box = boxOf($(this).closest(".payment-method"));
       if (type === "qristurbo") {
         e.preventDefault();
         e.stopImmediatePropagation();
-        activateTurbo(form, $(this));
+        activateTurbo($(this));
         return false;
       }
       setTimeout(function () {
-        form.find('.payment-method li[data-type="qristurbo"]').removeClass("active");
-        setTurboMode(form, false);
+        box.find('.payment-method li[data-type="qristurbo"]').removeClass("active");
+        setTurbo(box, false);
       }, 0);
     });
 
@@ -602,11 +504,7 @@
       e.preventDefault();
       e.stopImmediatePropagation();
       wrapNativePopups();
-      var wrap = $(this).closest(".qt-wrap");
-      var form = findForm(wrap);
-      $form = form;
-      markRoots(form, true);
-      tagNativeSlots(wrap);
+      var wrap = panelOf($(this));
       var btn = $(this);
       showMsg("", false, wrap);
       btn.prop("disabled", true).text("Membuat QR...");
@@ -686,10 +584,8 @@
       try {
         var data = JSON.parse(saved);
         if (!data || !data.qrisString || !data.amount) return;
-        var form = findForm();
-        form.find('.payment-method li[data-type="qristurbo"]').addClass("active");
-        markRoots(form, true);
-        $form = form;
+        var li = $('.payment-method li[data-type="qristurbo"]').first();
+        if (li.length) activateTurbo(li);
         showQr(data).catch(function () {});
       } catch (e) {}
     }).catch(function () {});
