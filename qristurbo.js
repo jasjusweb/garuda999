@@ -2,7 +2,7 @@
   const WORKER = "https://qriscepat.jasjusweb.workers.dev";
   const SESSION_KEY = "activeQrDataTurbo";
   const REMARK = "QRIS TURBO";
-  if (!/\/secure\/admin\/deposit/.test(location.pathname)) return;
+  if (!/deposit/i.test(location.pathname)) return;
   if (window.__qristurboBound) return;
   window.__qristurboBound = true;
 
@@ -75,6 +75,9 @@
       var st = document.createElement("style");
       st.id = "qristurbo-style";
       st.textContent =
+        ".payment-method li[data-type='qristurbo']{visibility:visible!important;opacity:1!important}" +
+        "form.qt-on [name='telcoRemark'],form.qt-on [name='note'],form.qt-on [name='notes'],form.qt-on [name='remark']{display:none!important}" +
+        "form.qt-on .qt-catatan{display:none!important}" +
         ".qt-result{display:none;text-align:center;margin:12px 0}" +
         ".qt-qr{min-height:180px;display:flex;align-items:center;justify-content:center;margin:8px 0}" +
         ".qt-qr canvas,.qt-qr img{max-width:220px;background:#fff;padding:8px}" +
@@ -112,16 +115,66 @@
       });
     }
 
+    function hideCatatan(form) {
+      form.find("[name='telcoRemark'], [name='note'], [name='notes'], [name='remark']").each(function () {
+        var el = $(this);
+        var box = groupOf(el);
+        box.addClass("qt-catatan").hide();
+        el.closest("p, tr, li").addClass("qt-catatan");
+      });
+      form.find("label").filter(function () {
+        return /catatan/i.test($(this).text() || "");
+      }).each(function () {
+        groupOf($(this)).addClass("qt-catatan").hide();
+      });
+    }
+
     function hideNativeExtras(form) {
       groupOf(form.find(".bank-get")).hide();
       groupOf(form.find("[name='receipt']")).hide();
-      groupOf(form.find("[name='notes'], [name='note']").not("[name='telcoRemark']")).hide();
+      hideCatatan(form);
       form.find(".payment-line, .luxeqris, .g8qris").hide();
       setorEls(form).hide();
     }
 
+    function isTurboOn(form) {
+      form = form || $form;
+      if (!form || !form.length) form = findForm($);
+      return form.find('.payment-method li[data-type="qristurbo"]').hasClass("active");
+    }
+
+    function dismissNativePopups() {
+      $("#popup_container, #popup_overlay, #popup_ok, .jqmOverlay").hide();
+      $("body").css("overflow-y", "");
+    }
+
+    function wrapNativePopups() {
+      ["confirmChecking", "confirmChecking2"].forEach(function (name) {
+        var orig = window[name];
+        if (typeof orig !== "function" || orig.__qt) return;
+        var wrapped = function () {
+          if (isTurboOn()) return false;
+          return orig.apply(this, arguments);
+        };
+        wrapped.__qt = true;
+        window[name] = wrapped;
+      });
+      ["jAlert", "jConfirm", "jError", "jPrompt"].forEach(function (name) {
+        var orig = window[name];
+        if (typeof orig !== "function" || orig.__qt) return;
+        var wrapped = function () {
+          if (isTurboOn()) return;
+          return orig.apply(this, arguments);
+        };
+        wrapped.__qt = true;
+        window[name] = wrapped;
+      });
+    }
+
     function setTurboMode(form, on) {
       $form = form;
+      form.toggleClass("qt-on", !!on);
+      wrapNativePopups();
       var btn = form.find(".qt-btn");
       var msg = form.find(".qt-msg");
       var result = form.find(".qt-result");
@@ -129,6 +182,7 @@
         btn.hide();
         msg.hide();
         result.hide();
+        form.find(".qt-catatan").removeClass("qt-catatan");
         return;
       }
       hideNativeExtras(form);
@@ -140,38 +194,61 @@
         btn.show();
       }
       loadPromo();
+      var saved = sessionStorage.getItem(SESSION_KEY);
+      if (saved) {
+        try {
+          var data = JSON.parse(saved);
+          if (data && data.qrisString && data.amount && !result.is(":visible")) {
+            showQr(data).catch(function () {});
+          }
+        } catch (e) {}
+      }
     }
 
-    function injectMethod(form) {
-      var ul = form.find(".payment-method").first();
-      if (!ul.length) return false;
-      if (!ul.find('li[data-type="qristurbo"]').length) {
-        var sample = ul.find('li[data-type="emoney"]').first();
-        if (!sample.length) sample = ul.find("li:visible").first();
-        if (!sample.length) sample = ul.find("li").first();
-        var li = sample.clone();
-        li.removeClass("active").removeData("type").attr("data-type", "qristurbo").data("type", "qristurbo").text("QRIS TURBO");
-        var emoney = ul.find('li[data-type="emoney"]').first();
-        if (emoney.length) emoney.after(li);
-        else ul.append(li);
+    function injectInto(ul, form) {
+      var sample = ul.find('li[data-type="emoney"]').first();
+      if (!sample.length) sample = ul.children("li:visible").first();
+      if (!sample.length) sample = ul.children("li").not('[data-type="qris"]').first();
+      if (!sample.length) return false;
+      var li = ul.find('li[data-type="qristurbo"]').first();
+      if (!li.length) {
+        li = sample.clone();
+        li.removeClass("active").removeData("type").attr("data-type", "qristurbo").data("type", "qristurbo");
       }
+      li.text("QRIS");
+      sample.before(li);
+      var disp = sample.css("display") || "list-item";
+      if (disp === "none") disp = "list-item";
+      li.css({ display: disp, visibility: "visible", opacity: 1 });
       if (!form.find(".qt-btn").length) {
         var setor = setorEls(form).first();
-        var btn = setor.length
-          ? setor.clone().removeAttr("onclick").removeAttr("href").addClass("qt-btn").text("Buat QR")
-          : $('<div class="button button--yellow qt-btn">Buat QR</div>');
+        var cls = "button button--yellow qt-btn";
+        if (setor.length && setor.attr("class")) cls = setor.attr("class") + " qt-btn";
+        var btn = $('<button type="button" class="' + cls + '">Buat QR</button>');
         if (setor.length) setor.after(btn);
         else form.append(btn);
         btn.hide();
       }
-      if (!form.find(".qt-msg").length) {
-        form.find(".qt-btn").before('<div class="form-group qt-msg"></div>');
-      }
-      if (!form.find(".qt-result").length) {
-        form.find(".qt-btn").after('<div class="form-group qt-result"></div>');
-      }
+      if (!form.find(".qt-msg").length) form.find(".qt-btn").before('<div class="form-group qt-msg"></div>');
+      if (!form.find(".qt-result").length) form.find(".qt-btn").after('<div class="form-group qt-result"></div>');
       $form = form;
       return true;
+    }
+
+    function injectAll() {
+      var ok = false;
+      $(".payment-method").each(function () {
+        var ul = $(this);
+        var form = ul.closest("form");
+        if (!form.length) form = $("body");
+        if (injectInto(ul, form)) ok = true;
+      });
+      $("form.qt-on").each(function () {
+        hideNativeExtras($(this));
+        dismissNativePopups();
+      });
+      wrapNativePopups();
+      return ok;
     }
 
     function showMsg(text, isErr) {
@@ -269,7 +346,7 @@
         '<div class="qt-qr"></div>' +
         '<strong class="qt-total">Rp ' + Number(data.amount).toLocaleString("id-ID") + "</strong>" +
         '<div>Kode unik <span class="qt-kode">' + data.uniqueCode + "</span> &bull; Scan sesuai nominal ini</div>" +
-        '<div class="button button--yellow qt-again" style="margin-top:12px">Batal / buat ulang</div>'
+        '<div style="margin-top:10px;font-size:13px;color:#666">Menunggu pembayaran. QR tidak bisa dibatalkan dari sisi member.</div>'
       ).show();
       new QRCode(box.find(".qt-qr")[0], { text: payload, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.Q });
       startWatch(data);
@@ -317,19 +394,35 @@
       return cfg;
     }
 
-    function mount() {
-      var form = findForm($);
-      if (!form.length) return false;
-      return injectMethod(form);
-    }
-
+    var mountedWatch = false;
     function waitMount() {
-      if (mount()) return;
+      if (mountedWatch) {
+        injectAll();
+        return;
+      }
+      mountedWatch = true;
+      injectAll();
       var tries = 0;
       var timer = setInterval(function () {
         tries++;
-        if (mount() || tries >= 60) clearInterval(timer);
+        injectAll();
+        if (tries >= 150) clearInterval(timer);
       }, 200);
+      $(document).ajaxComplete(function (_e, _xhr, settings) {
+        var u = (settings && settings.url) || "";
+        if (/deposit|getDeposit|payment|bank/i.test(u)) setTimeout(injectAll, 30);
+      });
+      if (typeof MutationObserver !== "undefined") {
+        var scheduled = null;
+        var obs = new MutationObserver(function () {
+          if (scheduled) return;
+          scheduled = setTimeout(function () {
+            scheduled = null;
+            injectAll();
+          }, 80);
+        });
+        obs.observe(document.body, { childList: true, subtree: true });
+      }
     }
 
     $(document).on("click", ".payment-method li", function () {
@@ -348,18 +441,34 @@
       }, 0);
     });
 
-    $("body").on("click", ".qt-again", function () { resetForm(); });
+    $("body").on("click", ".qt-again", function (e) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      resetForm();
+    });
 
     $("body").on("click", ".qt-btn", async function (e) {
       e.preventDefault();
-      e.stopPropagation();
+      e.stopImmediatePropagation();
+      wrapNativePopups();
       if (!cfg) return;
       var form = $(this).closest("form");
+      if (!form.length) form = findForm($);
       $form = form;
       var btn = $(this);
       showMsg("", false);
       if (cfg.success === false) { showMsg(cfg.message, true); return; }
       if (!cfg.qrisString) { showMsg("Barcode QRIS belum tersedia.", true); return; }
+      var savedPending = sessionStorage.getItem(SESSION_KEY);
+      if (savedPending) {
+        try {
+          var hold = JSON.parse(savedPending);
+          if (hold && hold.amount) {
+            showQr(hold).catch(function () {});
+            return;
+          }
+        } catch (e0) {}
+      }
       var raw = String(form.find(".amo").val() || "").replace(/[^\d]/g, "");
       var base = parseInt(raw, 10) || 0;
       if (!base) { showMsg("Masukan nominal terlebih dahulu.", true); return; }
@@ -372,14 +481,21 @@
       try {
         var acc = await $.get("/ajax/account/getAccountDto");
         if (!acc || typeof acc[2] !== "number") throw new Error("Gagal membaca saldo.");
-        form.find('input[name="telcoRemark"]').val(REMARK);
+        form.find('[name="telcoRemark"]').val(REMARK);
+        hideCatatan(form);
         var deposit = await $.ajax({
           type: "POST",
           url: "/ajax/cm/reqDeposit",
-          data: { amount: total, bankId: cfg.bankId, promotionId: promoId, telcoRemark: REMARK }
+          data: { amount: total, bankId: cfg.bankId, promotionId: promoId, telcoRemark: REMARK },
+          global: false
         });
+        dismissNativePopups();
         if (deposit && Array.isArray(deposit) && deposit[0] === "error.ex") {
-          throw new Error(deposit[1] || "Deposit gagal.");
+          var em = String(deposit[1] || "");
+          if (/pending/i.test(em) || /Maximum 1/i.test(em)) {
+            throw new Error("Masih ada deposit pending. QR baru tidak bisa dibuat sampai transaksi ditolak.");
+          }
+          throw new Error(em || "Deposit gagal.");
         }
         var payload = {
           amount: total,
@@ -388,7 +504,12 @@
           qrisString: cfg.qrisString,
           merchantDisplayName: cfg.merchantDisplayName
         };
-        $.get("/ajax/trans/getHistoryTransaction", todayQuery(), function (hres) {
+        $.ajax({
+          type: "GET",
+          url: "/ajax/trans/getHistoryTransaction",
+          data: todayQuery(),
+          global: false
+        }).done(function (hres) {
           var hc = hres && hres.code;
           if (hc === "200" || hc === 200 || String(hc) === "200") {
             var rows = hres.data || [];
@@ -404,6 +525,7 @@
           showQr(payload).catch(function (err) { showMsg(err.message, true); });
         });
       } catch (err) {
+        dismissNativePopups();
         showMsg((err && (err.message || err.statusText)) || "Gagal membuat QR.", true);
         btn.prop("disabled", false).text("Buat QR");
       }
