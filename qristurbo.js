@@ -81,6 +81,22 @@
         ".qt-turbo .qristurbo-panel{display:block}" +
         ".qt-turbo .qt-native-rest{display:none!important}" +
         ".qt-turbo .row:has(.payment-method)>[class*='col-']:not(:has(.payment-method)){display:none!important}" +
+        ".qt-turbo .form-group:has(.amo):not(:has(.qt-nominal))," +
+        ".qt-turbo .form-group:has(.promotionId):not(:has(.qt-promo))," +
+        ".qt-turbo .form-group:has(.bank-get)," +
+        ".qt-turbo .form-group:has([name='receipt'])," +
+        ".qt-turbo .form-group:has([name='telcoRemark'])," +
+        ".qt-turbo .form-group:has([name='note'])," +
+        ".qt-turbo .form-group:has([name='notes']){display:none!important}" +
+        ".qt-turbo .bank-get," +
+        ".qt-turbo .amo," +
+        ".qt-turbo .promotionId," +
+        ".qt-turbo [name='receipt']," +
+        ".qt-turbo [name='telcoRemark']," +
+        ".qt-turbo [name='note']," +
+        ".qt-turbo [name='notes']," +
+        ".qt-turbo .payment-line{display:none!important}" +
+        ".qt-turbo [onclick*='confirmChecking']{display:none!important}" +
         ".qristurbo-panel.qt-hasqr .qt-fields{display:none!important}" +
         ".qristurbo-panel .form-group{margin-bottom:16px}" +
         ".qristurbo-panel label{display:block;margin-bottom:8px;font-weight:700}" +
@@ -190,24 +206,32 @@
 
     function ensurePanel(ul) {
       var box = boxOf(ul);
+      var pmGroup = ul.closest(".form-group");
+      if (!pmGroup.length) pmGroup = ul.parent();
       var panel = box.find(".qristurbo-panel").first();
-      if (!panel.length) {
-        panel = $(panelHtml());
-        var row = ul.closest(".row");
-        var group = ul.closest(".form-group");
-        if (row.length) row.after(panel);
-        else if (group.length) group.after(panel);
-        else ul.after(panel);
+      if (!panel.length) panel = $(panelHtml());
+      if (pmGroup.next(".qristurbo-panel")[0] !== panel[0]) pmGroup.after(panel);
+      var restBox = box.children(".qt-native-rest").first();
+      if (!restBox.length) {
+        restBox = $('<div class="qt-native-rest"></div>');
+        panel.after(restBox);
       }
-      if (!box.find("> .qt-native-rest").length) {
-        var rest = panel.nextAll().not(".qristurbo-panel").not(".qt-native-rest");
-        if (rest.length) rest.wrapAll('<div class="qt-native-rest"></div>');
-      }
+      box.find(".form-group, .button, [onclick*='confirmChecking'], .payment-line").each(function () {
+        var el = $(this);
+        if (el.closest(".qristurbo-panel, .qris-cepat-wrapper-v11, .depo-tabs, .qt-native-rest, .payment-method").length) return;
+        if (el.find(".payment-method, .qristurbo-panel").length) return;
+        if (el.is(".button, [onclick*='confirmChecking']")) {
+          var t = String(el.text() || el.val() || "").toLowerCase();
+          if (t.indexOf("setor") === -1 && !el.is("[onclick*='confirmChecking']")) return;
+        }
+        restBox.append(el);
+      });
       return panel;
     }
 
     function setTurbo(box, on) {
       box.toggleClass("qt-turbo", !!on);
+      box.closest("form").toggleClass("qt-turbo", !!on);
       wrapNativePopups();
       if (on) loadPromo(box.find(".qristurbo-panel"));
     }
@@ -436,6 +460,7 @@
     function activateTurbo(li) {
       var ul = li.closest(".payment-method");
       var box = boxOf(ul);
+      ensurePanel(ul);
       box.find(".payment-method li").removeClass("active");
       li.addClass("active").removeClass("disabled");
       setTurbo(box, true);
