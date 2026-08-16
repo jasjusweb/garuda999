@@ -69,6 +69,7 @@
       }, 50);
     });
   }
+  waitForQRCode().catch(function () {});
 
   ready(function ($) {
     if (!document.getElementById("qristurbo-style")) {
@@ -76,18 +77,56 @@
       st.id = "qristurbo-style";
       st.textContent =
         ".payment-method li[data-type='qristurbo']{visibility:visible!important;opacity:1!important;pointer-events:auto!important;cursor:pointer!important}" +
-        "form.qt-on .qt-hide{display:none!important}" +
-        "form.qt-on [name='telcoRemark'],form.qt-on [name='note'],form.qt-on [name='notes'],form.qt-on [name='remark']{display:none!important}" +
-        ".qt-result{display:none;text-align:center;margin:12px 0}" +
-        ".qt-qr{min-height:180px;display:flex;align-items:center;justify-content:center;margin:8px 0}" +
-        ".qt-qr canvas,.qt-qr img{max-width:220px;background:#fff;padding:8px}" +
-        ".qt-total{display:block;font-size:18px;font-weight:700;margin:6px 0}" +
-        ".qt-kode{color:#c62828;font-weight:700}" +
-        ".qt-msg{display:none;margin:8px 0;color:#c62828}" +
+        ".qt-wrap{display:none;color:#222!important}" +
+        ".qt-on .qt-wrap{display:block!important}" +
+        ".qt-on .qt-wrap ~ *{display:none!important}" +
+        ".qt-on .qt-slot{display:none!important}" +
+        ".qt-on .manual-form-container-v11>.form-group:not(:has(.payment-method)){display:none!important}" +
+        ".qt-on .form-group:has(.bank-get):not(:has(.payment-method)):not(:has(.qt-wrap))," +
+        ".qt-on .form-group:has(.amo):not(:has(.payment-method)):not(:has(.qt-wrap))," +
+        ".qt-on .form-group:has(.promotionId):not(:has(.payment-method)):not(:has(.qt-wrap))," +
+        ".qt-on .form-group:has([name='amount']):not(:has(.payment-method)):not(:has(.qt-wrap))," +
+        ".qt-on .form-group:has([name='receipt']):not(:has(.payment-method)):not(:has(.qt-wrap))," +
+        ".qt-on .form-group:has([name='telcoRemark']):not(:has(.payment-method)):not(:has(.qt-wrap))," +
+        ".qt-on .form-group:has([name='note']):not(:has(.payment-method)):not(:has(.qt-wrap))," +
+        ".qt-on .form-group:has([name='notes']):not(:has(.payment-method)):not(:has(.qt-wrap))," +
+        ".qt-on .form-group:has([name='remark']):not(:has(.payment-method)):not(:has(.qt-wrap))," +
+        ".qt-on .form-group:has(.payment-line):not(:has(.qt-wrap))," +
+        ".qt-on .form-group:has(.luxeqris):not(:has(.qt-wrap))," +
+        ".qt-on .form-group:has(.g8qris):not(:has(.qt-wrap)){display:none!important}" +
+        ".qt-on .bank-get," +
+        ".qt-on .amo," +
+        ".qt-on .promotionId," +
+        ".qt-on [name='amount']," +
+        ".qt-on [name='receipt']," +
+        ".qt-on [name='telcoRemark']," +
+        ".qt-on [name='note']," +
+        ".qt-on [name='notes']," +
+        ".qt-on [name='remark']," +
+        ".qt-on .payment-line," +
+        ".qt-on .luxeqris," +
+        ".qt-on .g8qris{display:none!important}" +
+        ".qt-on [onclick*='confirmChecking']," +
+        ".qt-on [href*='confirmChecking']{display:none!important}" +
+        ".qt-on .button:not(.qt-btn):not(.qt-again):not(.payment-method *){display:none!important}" +
+        ".qt-on .qt-wrap .form-group{display:block!important}" +
+        ".qt-wrap.qt-hasqr .qt-fields{display:none!important}" +
+        ".qt-msg{display:none;margin:8px 0;color:#c62828!important;font-size:13px}" +
         ".qt-msg.err{display:block}" +
-        ".qt-ok,.qt-fail{padding:16px 8px}" +
-        ".qt-ok{color:#166534}" +
-        ".qt-fail{color:#9f1239}";
+        ".qt-result{display:none}" +
+        ".qt-card{background:#fff;border:1px solid #e6e6e6;border-radius:14px;padding:16px 12px 18px;text-align:center;color:#222!important;box-shadow:0 3px 16px rgba(0,0,0,.08)}" +
+        ".qt-card *{color:#222!important}" +
+        ".qt-merchant{font-size:13px;margin-bottom:8px}" +
+        ".qt-qr{width:220px;height:220px;margin:10px auto;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #00a2b1;border-radius:8px;padding:8px;box-sizing:content-box}" +
+        ".qt-qr canvas,.qt-qr img{width:220px!important;height:220px!important;max-width:100%;background:#fff;display:block}" +
+        ".qt-total{display:block;font-size:22px;font-weight:800;margin:10px 0 6px;color:#111!important}" +
+        ".qt-kode-line{font-size:14px;margin:4px 0}" +
+        ".qt-kode{display:inline-block;color:#c62828!important;background:#fff3f3;border:1px solid #ffcdd2;border-radius:6px;padding:2px 8px;font-weight:800}" +
+        ".qt-hint{margin-top:10px;font-size:12px;line-height:1.4;color:#666!important}" +
+        ".qt-ok,.qt-fail{padding:16px 8px;text-align:center}" +
+        ".qt-ok{color:#166534!important}" +
+        ".qt-fail{color:#9f1239!important}" +
+        ".qt-again{margin-top:12px}";
       document.head.appendChild(st);
     }
 
@@ -95,52 +134,55 @@
     var pollBal = null;
     var pollHit = null;
     var $form = null;
+    var cfgWaiters = [];
 
-    function findForm($) {
-      var f = $('form[action*="reqDeposit"], #confirm-form, #confirm-form-2').first();
+    function findForm(el) {
+      if (el && el.length) {
+        var box = el.closest("#confirm-form-2, #confirm-form, form[action*='reqDeposit'], form");
+        if (box.length) return box;
+      }
+      var vis = $("#confirm-form-2, #confirm-form, form[action*='reqDeposit']").filter(":visible").first();
+      if (vis.length) return vis;
+      var f = $("#confirm-form-2, #confirm-form, form[action*='reqDeposit']").first();
       return f.length ? f : $("form").first();
     }
 
-    function groupOf(el) {
-      var box = el.closest(".form-group");
-      return box.length ? box : el;
-    }
-
-    function setorEls(form) {
-      return form.find("a, button, input[type=button], input[type=submit], .button, [onclick*='confirmChecking']").filter(function () {
-        if ($(this).hasClass("qt-btn") || $(this).hasClass("qt-again")) return false;
-        if ($(this).closest(".payment-method, .qt-result").length) return false;
-        var t = String($(this).text() || $(this).val() || "").toLowerCase();
-        return t.indexOf("setor") !== -1 || $(this).is("[onclick*='confirmChecking']");
+    function markRoots(from, on) {
+      var roots = $();
+      if (from && from.length) {
+        roots = roots.add(from);
+        roots = roots.add(from.closest("#confirm-form-2, #confirm-form, .manual-form-container-v11, form"));
+        roots = roots.add(from.find("#confirm-form-2, #confirm-form, .manual-form-container-v11"));
+      }
+      roots = roots.add($(".qt-wrap").closest("#confirm-form-2, #confirm-form, .manual-form-container-v11, form"));
+      roots.each(function () {
+        $(this).toggleClass("qt-on", !!on);
       });
     }
 
-    function markTurboHidden(form) {
-      form.find(".bank-get, [name='receipt'], [name='telcoRemark'], [name='note'], [name='notes'], [name='remark'], .payment-line, .luxeqris, .g8qris").addClass("qt-hide");
-      setorEls(form).addClass("qt-hide");
-      form.find("label").filter(function () {
-        return /rekening tujuan|bukti setoran|catatan/i.test(String($(this).text() || ""));
-      }).each(function () {
-        var lab = $(this);
-        lab.addClass("qt-hide");
-        var g = lab.closest(".form-group");
-        if (g.length && !g.find(".amo, .promotionId, .payment-method").length) g.addClass("qt-hide");
+    function tagNativeSlots(wrap) {
+      if (!wrap || !wrap.length) return;
+      wrap.nextAll().addClass("qt-slot");
+      wrap.parent().children().each(function () {
+        var el = $(this);
+        if (el.is(".qt-wrap") || el.find(".payment-method, .qt-wrap").length) return;
+        if (el.find(".amo, .promotionId, .bank-get, [name='amount'], [name='receipt']").length) el.addClass("qt-slot");
+        if (/total|promotion|rekening|bukti|catatan/i.test(el.find("label").text() || el.text())) el.addClass("qt-slot");
       });
     }
 
-    function clearInlineHide(form) {
-      form.find(".bank-get, [name='receipt'], [name='telcoRemark'], [name='note'], [name='notes'], [name='remark']").each(function () {
-        this.style.removeProperty("display");
-      });
-      form.find(".qt-hide, .qt-catatan").each(function () {
-        this.style.removeProperty("display");
-      });
+    function allWraps() {
+      return $(".qt-wrap");
+    }
+
+    function panelOf(form) {
+      return (form || findForm()).find(".qt-wrap").first();
     }
 
     function isTurboOn(form) {
       form = form || $form;
-      if (!form || !form.length) form = findForm($);
-      return form.find('.payment-method li[data-type="qristurbo"]').hasClass("active");
+      if (!form || !form.length) form = findForm();
+      return form.hasClass("qt-on") || form.find('.payment-method li[data-type="qristurbo"]').hasClass("active");
     }
 
     function dismissNativePopups() {
@@ -171,35 +213,54 @@
       });
     }
 
+    function repairOld(form) {
+      if (form.data("qt-repaired")) return;
+      form.data("qt-repaired", 1);
+      form.find(".qt-hide, .qt-catatan").each(function () {
+        this.style.removeProperty("display");
+      }).removeClass("qt-hide qt-catatan");
+      form.find(".qt-btn, .qt-msg, .qt-result").filter(function () {
+        return !$(this).closest(".qt-wrap").length;
+      }).remove();
+    }
+
+    function ensurePanel(form, ul) {
+      var wrap = form.find(".qt-wrap").first();
+      if (wrap.length) return wrap;
+      wrap = $(
+        '<div class="qt-wrap">' +
+          '<div class="qt-fields">' +
+            '<div class="form-group">' +
+              "<label>Total (IDR)</label>" +
+              '<input type="text" class="form-control qt-nominal" inputmode="numeric" autocomplete="off" placeholder="Masukan Nominal">' +
+            "</div>" +
+            '<div class="form-group">' +
+              "<label>Promotion</label>" +
+              '<select class="form-control qt-promo"><option value="">Silahkan Pilih</option></select>' +
+            "</div>" +
+            '<div class="qt-msg"></div>' +
+            '<button type="button" class="button button--yellow qt-btn">Buat QR</button>' +
+          "</div>" +
+          '<div class="qt-result"></div>' +
+        "</div>"
+      );
+      if (ul.next()[0] !== wrap[0]) ul.after(wrap);
+      tagNativeSlots(wrap);
+      return wrap;
+    }
+
     function setTurboMode(form, on) {
       $form = form;
-      form.toggleClass("qt-on", !!on);
+      markRoots(form, on);
       wrapNativePopups();
-      var btn = form.find(".qt-btn");
-      var msg = form.find(".qt-msg");
-      var result = form.find(".qt-result");
-      if (!on) {
-        btn.hide();
-        msg.hide();
-        result.hide();
-        clearInlineHide(form);
-        form.removeClass("qt-on");
-        return;
-      }
-      markTurboHidden(form);
-      groupOf(form.find(".amo")).show();
-      groupOf(form.find(".promotionId")).show();
-      if (!result.is(":visible")) {
-        form.find(".amo").closest(".form-group").show();
-        form.find(".promotionId").closest(".form-group").show();
-        btn.show();
-      }
-      loadPromo();
+      if (!on) return;
+      form.find(".qt-wrap").each(function () { tagNativeSlots($(this)); });
+      loadPromo(form);
       var saved = sessionStorage.getItem(SESSION_KEY);
       if (saved) {
         try {
           var data = JSON.parse(saved);
-          if (data && data.qrisString && data.amount && !result.is(":visible")) {
+          if (data && data.qrisString && data.amount) {
             showQr(data).catch(function () {});
           }
         } catch (e) {}
@@ -207,14 +268,15 @@
     }
 
     function activateTurbo(form, li) {
-      if (!form || !form.length) form = (li && li.closest("form")) || findForm($);
+      if (!form || !form.length) form = (li && li.closest("form")) || findForm(li);
       form.find(".payment-method li").removeClass("active");
       if (li && li.length) li.addClass("active").removeClass("disabled");
       setTurboMode(form, true);
     }
 
     function bindTurboClick(li) {
-      li.off("click.qristurbo mousedown.qristurbo");
+      if (li.attr("data-qt-bound") === "1") return;
+      li.attr("data-qt-bound", "1");
       li.on("mousedown.qristurbo click.qristurbo", function (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -229,10 +291,11 @@
       if (!sample.length) sample = ul.children("li:visible").first();
       if (!sample.length) sample = ul.children("li").not('[data-type="qris"]').first();
       if (!sample.length) return false;
+      repairOld(form);
       var li = ul.find('li[data-type="qristurbo"]').first();
       if (!li.length) {
         li = sample.clone(false, false);
-        li.removeClass("active disabled").removeAttr("onclick");
+        li.removeClass("active disabled").removeAttr("onclick").removeAttr("data-qt-bound");
         li.removeData("type").attr("data-type", "qristurbo").data("type", "qristurbo");
         sample.before(li);
       } else if (li.next()[0] !== sample[0]) {
@@ -249,18 +312,8 @@
         cursor: "pointer"
       });
       bindTurboClick(li);
-      if (!form.find(".qt-btn").length) {
-        var setor = setorEls(form).first();
-        var cls = "button button--yellow qt-btn";
-        if (setor.length && setor.attr("class")) cls = setor.attr("class") + " qt-btn";
-        var btn = $('<button type="button" class="' + cls + '">Buat QR</button>');
-        if (setor.length) setor.after(btn);
-        else form.append(btn);
-        btn.hide();
-      }
-      if (!form.find(".qt-msg").length) form.find(".qt-btn").before('<div class="form-group qt-msg"></div>');
-      if (!form.find(".qt-result").length) form.find(".qt-btn").after('<div class="form-group qt-result"></div>');
-      $form = form;
+      ensurePanel(form, ul);
+      if (!$form || !$form.length) $form = form;
       return true;
     }
 
@@ -269,20 +322,16 @@
       $(".payment-method").each(function () {
         var ul = $(this);
         var form = ul.closest("form");
-        if (!form.length) form = $("body");
+        if (!form.length) form = findForm(ul);
         if (injectInto(ul, form)) ok = true;
-      });
-      $("form.qt-on").each(function () {
-        markTurboHidden($(this));
-        dismissNativePopups();
       });
       wrapNativePopups();
       return ok;
     }
 
-    function showMsg(text, isErr) {
-      var el = ($form || findForm($)).find(".qt-msg");
-      if (!text) { el.hide().text(""); return; }
+    function showMsg(text, isErr, wrap) {
+      var el = (wrap && wrap.length ? wrap : panelOf($form || findForm())).find(".qt-msg");
+      if (!text) { el.hide().removeClass("err").text(""); return; }
       el.toggleClass("err", !!isErr).text(text).show();
     }
 
@@ -296,24 +345,29 @@
     function resetForm() {
       stopPoll();
       sessionStorage.removeItem(SESSION_KEY);
-      var form = $form || findForm($);
-      form.find(".qt-result").hide().empty();
-      form.find(".qt-btn").prop("disabled", false).text("Buat QR").show();
-      groupOf(form.find(".amo")).show();
-      groupOf(form.find(".promotionId")).show();
-      showMsg("", false);
+      allWraps().removeClass("qt-hasqr").each(function () {
+        var wrap = $(this);
+        wrap.find(".qt-fields").show();
+        wrap.find(".qt-btn").prop("disabled", false).text("Buat QR");
+        wrap.find(".qt-result").hide().empty();
+        wrap.find(".qt-msg").hide().removeClass("err").text("");
+      });
+    }
+
+    function paintStatus(html) {
+      allWraps().addClass("qt-hasqr").each(function () {
+        var wrap = $(this);
+        wrap.find(".qt-fields").hide();
+        wrap.find(".qt-result").html(html).show();
+      });
     }
 
     function showSuccess(amount) {
       stopPoll();
       sessionStorage.removeItem(SESSION_KEY);
-      var form = $form || findForm($);
-      form.find(".qt-btn").hide();
-      groupOf(form.find(".amo")).hide();
-      groupOf(form.find(".promotionId")).hide();
-      form.find(".qt-result").html(
-        '<div class="qt-ok"><strong>Deposit berhasil</strong><p>Saldo Rp ' + Number(amount).toLocaleString("id-ID") + " sudah masuk.</p></div>"
-      ).show();
+      paintStatus(
+        '<div class="qt-card qt-ok"><strong>Deposit berhasil</strong><p>Saldo Rp ' + Number(amount).toLocaleString("id-ID") + " sudah masuk.</p></div>"
+      );
       $.get("/ajax/account/getAccountDto", function (r) {
         if (r && typeof r[2] === "number") $(".g8-bal-total").text("IDR " + r[2].toLocaleString("id-ID"));
       });
@@ -322,14 +376,10 @@
     function showReject(status) {
       stopPoll();
       sessionStorage.removeItem(SESSION_KEY);
-      var form = $form || findForm($);
-      form.find(".qt-btn").hide();
-      groupOf(form.find(".amo")).hide();
-      groupOf(form.find(".promotionId")).hide();
-      form.find(".qt-result").html(
-        '<div class="qt-fail"><strong>Deposit ditolak</strong><p>' + esc(status || "Transaksi ditolak / dibatalkan.") + "</p>" +
+      paintStatus(
+        '<div class="qt-card qt-fail"><strong>Deposit ditolak</strong><p>' + esc(status || "Transaksi ditolak / dibatalkan.") + "</p>" +
         '<div class="button button--yellow qt-again">Buat QR ulang</div></div>'
-      ).show();
+      );
     }
 
     function startWatch(data) {
@@ -361,30 +411,65 @@
       }, 8000);
     }
 
+    function drawQr(el, payload) {
+      if (!el) return;
+      el.innerHTML = "";
+      var img = document.createElement("img");
+      img.alt = "QRIS";
+      img.width = 220;
+      img.height = 220;
+      img.src = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&ecc=M&data=" + encodeURIComponent(payload);
+      el.appendChild(img);
+      waitForQRCode().then(function () {
+        try {
+          el.innerHTML = "";
+          new QRCode(el, { text: payload, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.Q });
+        } catch (e) {
+          el.innerHTML = "";
+          el.appendChild(img);
+        }
+      }).catch(function () {});
+    }
+
+    function cardHtml(data) {
+      var name = (cfg && cfg.merchantDisplayName) || data.merchantDisplayName || "-";
+      return (
+        '<div class="qt-card">' +
+          '<div class="qt-merchant">Merchant: <strong>' + esc(name) + "</strong></div>" +
+          '<div class="qt-qr"></div>' +
+          '<strong class="qt-total">Rp ' + Number(data.amount).toLocaleString("id-ID") + "</strong>" +
+          '<div class="qt-kode-line">Kode unik <span class="qt-kode">' + esc(data.uniqueCode) + "</span></div>" +
+          '<div class="qt-hint">Scan sesuai nominal ini. QR tidak bisa dibatalkan dari sisi member.</div>' +
+        "</div>"
+      );
+    }
+
     async function showQr(data) {
-      await waitForQRCode();
-      var form = $form || findForm($);
+      if (!cfg || !cfg.qrisString) throw new Error("Barcode QRIS belum tersedia.");
       var payload = generateQrisPayload(cfg.qrisString, data.amount);
-      groupOf(form.find(".amo")).hide();
-      groupOf(form.find(".promotionId")).hide();
-      form.find(".qt-btn").hide();
-      showMsg("", false);
-      var box = form.find(".qt-result");
-      box.html(
-        '<div>Merchant: <strong>' + esc(cfg.merchantDisplayName || "-") + "</strong></div>" +
-        '<div class="qt-qr"></div>' +
-        '<strong class="qt-total">Rp ' + Number(data.amount).toLocaleString("id-ID") + "</strong>" +
-        '<div>Kode unik <span class="qt-kode">' + data.uniqueCode + "</span> &bull; Scan sesuai nominal ini</div>" +
-        '<div style="margin-top:10px;font-size:13px;color:#666">Menunggu pembayaran. QR tidak bisa dibatalkan dari sisi member.</div>'
-      ).show();
-      new QRCode(box.find(".qt-qr")[0], { text: payload, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.Q });
+      var html = cardHtml(data);
+      var wraps = allWraps();
+      if (!wraps.length) {
+        injectAll();
+        wraps = allWraps();
+      }
+      wraps.addClass("qt-hasqr").each(function () {
+        var wrap = $(this);
+        markRoots(wrap, true);
+        tagNativeSlots(wrap);
+        wrap.find(".qt-fields").hide();
+        wrap.find(".qt-result").html(html).css("display", "block");
+        drawQr(wrap.find(".qt-qr")[0], payload);
+      });
       startWatch(data);
     }
 
-    function loadPromo() {
-      var form = $form || findForm($);
-      var sel = form.find(".promotionId").first();
+    function loadPromo(form) {
+      form = form || $form || findForm();
+      var sel = panelOf(form).find(".qt-promo").first();
       if (!sel.length || !cfg || !cfg.bankId) return;
+      if (sel.data("qt-loaded") === cfg.bankId) return;
+      sel.data("qt-loaded", cfg.bankId);
       $.ajax({
         url: "/ajax/credit/getDepositPromotion",
         type: "GET",
@@ -399,6 +484,11 @@
           }
         }
       });
+    }
+
+    function whenCfg() {
+      if (cfg) return Promise.resolve(cfg);
+      return new Promise(function (resolve) { cfgWaiters.push(resolve); });
     }
 
     async function loadConfig() {
@@ -420,6 +510,7 @@
         cfg.success = false;
         cfg.message = qc.maintenanceText || "Sistem pembayaran dalam pemeliharaan.";
       }
+      cfgWaiters.splice(0).forEach(function (fn) { fn(cfg); });
       return cfg;
     }
 
@@ -439,7 +530,7 @@
           e.stopPropagation();
           if (e.stopImmediatePropagation) e.stopImmediatePropagation();
           var $li = $(t);
-          activateTurbo($li.closest("form"), $li);
+          activateTurbo(findForm($li), $li);
         }, true);
       }
       injectAll();
@@ -447,28 +538,18 @@
       var timer = setInterval(function () {
         tries++;
         injectAll();
-        if (tries >= 150) clearInterval(timer);
-      }, 200);
+        if (tries >= 80) clearInterval(timer);
+      }, 250);
       $(document).ajaxComplete(function (_e, _xhr, settings) {
         var u = (settings && settings.url) || "";
-        if (/deposit|getDeposit|payment|bank/i.test(u)) setTimeout(injectAll, 30);
+        if (/reqDeposit/.test(u)) return;
+        if (/getDeposit|payment|bank/i.test(u)) setTimeout(injectAll, 30);
       });
-      if (typeof MutationObserver !== "undefined") {
-        var scheduled = null;
-        var obs = new MutationObserver(function () {
-          if (scheduled) return;
-          scheduled = setTimeout(function () {
-            scheduled = null;
-            injectAll();
-          }, 80);
-        });
-        obs.observe(document.body, { childList: true, subtree: true });
-      }
     }
 
     $(document).on("click", ".payment-method li", function (e) {
       var type = String($(this).data("type") || $(this).attr("data-type") || "");
-      var form = $(this).closest("form");
+      var form = findForm($(this));
       if (type === "qristurbo") {
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -491,42 +572,40 @@
       e.preventDefault();
       e.stopImmediatePropagation();
       wrapNativePopups();
-      if (!cfg) return;
-      var form = $(this).closest("form");
-      if (!form.length) form = findForm($);
+      var wrap = $(this).closest(".qt-wrap");
+      var form = findForm(wrap);
       $form = form;
+      markRoots(form, true);
+      tagNativeSlots(wrap);
       var btn = $(this);
-      showMsg("", false);
-      if (cfg.success === false) { showMsg(cfg.message, true); return; }
-      if (!cfg.qrisString) { showMsg("Barcode QRIS belum tersedia.", true); return; }
-      var savedPending = sessionStorage.getItem(SESSION_KEY);
-      if (savedPending) {
-        try {
-          var hold = JSON.parse(savedPending);
-          if (hold && hold.amount) {
-            showQr(hold).catch(function () {});
-            return;
-          }
-        } catch (e0) {}
-      }
-      var raw = String(form.find(".amo").val() || "").replace(/[^\d]/g, "");
-      var base = parseInt(raw, 10) || 0;
-      if (!base) { showMsg("Masukan nominal terlebih dahulu.", true); return; }
-      if (base < (cfg.minDeposit || 25000)) { showMsg("Minimal deposit Rp " + Number(cfg.minDeposit || 25000).toLocaleString("id-ID") + ".", true); return; }
-      if (base > (cfg.maxDeposit || 10000000)) { showMsg("Maksimal deposit Rp " + Number(cfg.maxDeposit || 10000000).toLocaleString("id-ID") + ".", true); return; }
-      var promoId = form.find(".promotionId").val() || "";
-      var code = uniqueCode(base, cfg.uniqueCodeLength);
-      var total = base + code;
+      showMsg("", false, wrap);
       btn.prop("disabled", true).text("Membuat QR...");
       try {
+        var readyCfg = await whenCfg();
+        if (readyCfg.success === false) throw new Error(readyCfg.message || "QRIS sedang tidak tersedia.");
+        if (!readyCfg.qrisString) throw new Error("Barcode QRIS belum tersedia.");
+        var savedPending = sessionStorage.getItem(SESSION_KEY);
+        if (savedPending) {
+          var hold = JSON.parse(savedPending);
+          if (hold && hold.amount) {
+            await showQr(hold);
+            return;
+          }
+        }
+        var raw = String(wrap.find(".qt-nominal").val() || "").replace(/[^\d]/g, "");
+        var base = parseInt(raw, 10) || 0;
+        if (!base) throw new Error("Masukan nominal terlebih dahulu.");
+        if (base < (readyCfg.minDeposit || 25000)) throw new Error("Minimal deposit Rp " + Number(readyCfg.minDeposit || 25000).toLocaleString("id-ID") + ".");
+        if (base > (readyCfg.maxDeposit || 10000000)) throw new Error("Maksimal deposit Rp " + Number(readyCfg.maxDeposit || 10000000).toLocaleString("id-ID") + ".");
+        var promoId = wrap.find(".qt-promo").val() || "";
+        var code = uniqueCode(base, readyCfg.uniqueCodeLength);
+        var total = base + code;
         var acc = await $.get("/ajax/account/getAccountDto");
         if (!acc || typeof acc[2] !== "number") throw new Error("Gagal membaca saldo.");
-        form.find('[name="telcoRemark"]').val(REMARK);
-        markTurboHidden(form);
         var deposit = await $.ajax({
           type: "POST",
           url: "/ajax/cm/reqDeposit",
-          data: { amount: total, bankId: cfg.bankId, promotionId: promoId, telcoRemark: REMARK },
+          data: { amount: total, bankId: readyCfg.bankId, promotionId: promoId, telcoRemark: REMARK },
           global: false
         });
         dismissNativePopups();
@@ -541,9 +620,11 @@
           amount: total,
           uniqueCode: code,
           initialBalance: acc[2],
-          qrisString: cfg.qrisString,
-          merchantDisplayName: cfg.merchantDisplayName
+          qrisString: readyCfg.qrisString,
+          merchantDisplayName: readyCfg.merchantDisplayName
         };
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(payload));
+        await showQr(payload);
         $.ajax({
           type: "GET",
           url: "/ajax/trans/getHistoryTransaction",
@@ -551,22 +632,18 @@
           global: false
         }).done(function (hres) {
           var hc = hres && hres.code;
-          if (hc === "200" || hc === 200 || String(hc) === "200") {
-            var rows = hres.data || [];
-            var pending = rows.filter(function (t) {
-              return t.transType === "Deposit" && Math.abs(Number(t.amount) - total) < 0.00001 && Number(t.statusInt) === 10;
-            });
-            if (pending.length) payload.transId = pending[pending.length - 1].transId;
-          }
+          if (hc !== "200" && hc !== 200 && String(hc) !== "200") return;
+          var rows = hres.data || [];
+          var pending = rows.filter(function (t) {
+            return t.transType === "Deposit" && Math.abs(Number(t.amount) - total) < 0.00001 && Number(t.statusInt) === 10;
+          });
+          if (!pending.length) return;
+          payload.transId = pending[pending.length - 1].transId;
           sessionStorage.setItem(SESSION_KEY, JSON.stringify(payload));
-          showQr(payload).catch(function (err) { showMsg(err.message, true); });
-        }).fail(function () {
-          sessionStorage.setItem(SESSION_KEY, JSON.stringify(payload));
-          showQr(payload).catch(function (err) { showMsg(err.message, true); });
         });
       } catch (err) {
         dismissNativePopups();
-        showMsg((err && (err.message || err.statusText)) || "Gagal membuat QR.", true);
+        showMsg((err && (err.message || err.statusText)) || "Gagal membuat QR.", true, wrap);
         btn.prop("disabled", false).text("Buat QR");
       }
     });
@@ -575,15 +652,16 @@
     loadConfig().then(function () {
       waitMount();
       var saved = sessionStorage.getItem(SESSION_KEY);
-      if (saved) {
-        try {
-          var data = JSON.parse(saved);
-          if (data && data.qrisString && data.amount) {
-            findForm($).find('.payment-method li[data-type="qristurbo"]').trigger("click");
-            showQr(data).catch(function () {});
-          }
-        } catch (e) {}
-      }
+      if (!saved) return;
+      try {
+        var data = JSON.parse(saved);
+        if (!data || !data.qrisString || !data.amount) return;
+        var form = findForm();
+        form.find('.payment-method li[data-type="qristurbo"]').addClass("active");
+        markRoots(form, true);
+        $form = form;
+        showQr(data).catch(function () {});
+      } catch (e) {}
     }).catch(function () {});
   });
 })();
