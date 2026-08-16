@@ -77,23 +77,14 @@
       st.id = "qristurbo-style";
       st.textContent =
         ".payment-method li[data-type='qristurbo']{visibility:visible!important;opacity:1!important;pointer-events:auto!important;cursor:pointer!important}" +
-        ".qt-wrap{display:none;color:#222!important}" +
+        ".qt-wrap{display:none;clear:both!important;float:none!important;width:100%!important;max-width:none;margin:0;padding:8px 15px 20px;position:relative;z-index:3;color:#222!important;box-sizing:border-box}" +
         ".qt-on .qt-wrap{display:block!important}" +
         ".qt-on .qt-wrap ~ *{display:none!important}" +
         ".qt-on .qt-slot{display:none!important}" +
-        ".qt-on .manual-form-container-v11>.form-group:not(:has(.payment-method)){display:none!important}" +
-        ".qt-on .form-group:has(.bank-get):not(:has(.payment-method)):not(:has(.qt-wrap))," +
-        ".qt-on .form-group:has(.amo):not(:has(.payment-method)):not(:has(.qt-wrap))," +
-        ".qt-on .form-group:has(.promotionId):not(:has(.payment-method)):not(:has(.qt-wrap))," +
-        ".qt-on .form-group:has([name='amount']):not(:has(.payment-method)):not(:has(.qt-wrap))," +
-        ".qt-on .form-group:has([name='receipt']):not(:has(.payment-method)):not(:has(.qt-wrap))," +
-        ".qt-on .form-group:has([name='telcoRemark']):not(:has(.payment-method)):not(:has(.qt-wrap))," +
-        ".qt-on .form-group:has([name='note']):not(:has(.payment-method)):not(:has(.qt-wrap))," +
-        ".qt-on .form-group:has([name='notes']):not(:has(.payment-method)):not(:has(.qt-wrap))," +
-        ".qt-on .form-group:has([name='remark']):not(:has(.payment-method)):not(:has(.qt-wrap))," +
-        ".qt-on .form-group:has(.payment-line):not(:has(.qt-wrap))," +
-        ".qt-on .form-group:has(.luxeqris):not(:has(.qt-wrap))," +
-        ".qt-on .form-group:has(.g8qris):not(:has(.qt-wrap)){display:none!important}" +
+        ".qt-on .row:has(.payment-method)>[class*='col-']:not(:has(.payment-method)){display:none!important}" +
+        ".qt-on .row:not(:has(.payment-method)):not(:has(.qt-wrap)){display:none!important}" +
+        ".qt-on .form-row:not(:has(.payment-method)):not(:has(.qt-wrap)){display:none!important}" +
+        ".qt-on tr:not(:has(.payment-method)):not(:has(.qt-wrap)){display:none!important}" +
         ".qt-on .bank-get," +
         ".qt-on .amo," +
         ".qt-on .promotionId," +
@@ -109,24 +100,27 @@
         ".qt-on [onclick*='confirmChecking']," +
         ".qt-on [href*='confirmChecking']{display:none!important}" +
         ".qt-on .button:not(.qt-btn):not(.qt-again):not(.payment-method *){display:none!important}" +
-        ".qt-on .qt-wrap .form-group{display:block!important}" +
+        ".qt-wrap .form-group{display:flex!important;flex-direction:column;width:100%!important;float:none!important;margin:0 0 16px!important;padding:0!important}" +
+        ".qt-wrap .form-group>label{display:block;margin:0 0 8px;font-weight:700}" +
+        ".qt-wrap .form-control{display:block;width:100%;height:34px;padding:6px 12px;box-sizing:border-box}" +
         ".qt-wrap.qt-hasqr .qt-fields{display:none!important}" +
-        ".qt-msg{display:none;margin:8px 0;color:#c62828!important;font-size:13px}" +
+        ".qt-btn{display:inline-block;width:auto;min-width:160px;margin:8px 0 12px;padding:8px 28px}" +
+        ".qt-msg{display:none;margin:0 0 12px;color:#c62828!important;font-size:13px}" +
         ".qt-msg.err{display:block}" +
-        ".qt-result{display:none}" +
-        ".qt-card{background:#fff;border:1px solid #e6e6e6;border-radius:14px;padding:16px 12px 18px;text-align:center;color:#222!important;box-shadow:0 3px 16px rgba(0,0,0,.08)}" +
+        ".qt-result{display:none;margin:8px 0 12px}" +
+        ".qt-card{background:#fff;border:1px solid #e6e6e6;border-radius:14px;padding:20px 16px;text-align:center;color:#222!important;box-shadow:0 3px 16px rgba(0,0,0,.08)}" +
         ".qt-card *{color:#222!important}" +
-        ".qt-merchant{font-size:13px;margin-bottom:8px}" +
-        ".qt-qr{width:220px;height:220px;margin:10px auto;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #00a2b1;border-radius:8px;padding:8px;box-sizing:content-box}" +
+        ".qt-merchant{font-size:13px;margin-bottom:12px}" +
+        ".qt-qr{width:220px;height:220px;margin:12px auto;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #00a2b1;border-radius:8px;padding:8px;box-sizing:content-box}" +
         ".qt-qr canvas,.qt-qr img{width:220px!important;height:220px!important;max-width:100%;background:#fff;display:block}" +
-        ".qt-total{display:block;font-size:22px;font-weight:800;margin:10px 0 6px;color:#111!important}" +
-        ".qt-kode-line{font-size:14px;margin:4px 0}" +
+        ".qt-total{display:block;font-size:22px;font-weight:800;margin:12px 0 8px;color:#111!important}" +
+        ".qt-kode-line{font-size:14px;margin:8px 0}" +
         ".qt-kode{display:inline-block;color:#c62828!important;background:#fff3f3;border:1px solid #ffcdd2;border-radius:6px;padding:2px 8px;font-weight:800}" +
-        ".qt-hint{margin-top:10px;font-size:12px;line-height:1.4;color:#666!important}" +
+        ".qt-hint{margin-top:12px;font-size:12px;line-height:1.5;color:#666!important}" +
         ".qt-ok,.qt-fail{padding:16px 8px;text-align:center}" +
         ".qt-ok{color:#166534!important}" +
         ".qt-fail{color:#9f1239!important}" +
-        ".qt-again{margin-top:12px}";
+        ".qt-again{margin-top:16px}";
       document.head.appendChild(st);
     }
 
@@ -163,12 +157,42 @@
     function tagNativeSlots(wrap) {
       if (!wrap || !wrap.length) return;
       wrap.nextAll().addClass("qt-slot");
-      wrap.parent().children().each(function () {
+      var root = wrap.closest("form, #confirm-form-2, #confirm-form, .manual-form-container-v11");
+      if (!root.length) root = wrap.parent();
+      root.find(".row, .form-row, tr, [class*='col-'], .form-group, p, td, th").each(function () {
         var el = $(this);
-        if (el.is(".qt-wrap") || el.find(".payment-method, .qt-wrap").length) return;
-        if (el.find(".amo, .promotionId, .bank-get, [name='amount'], [name='receipt']").length) el.addClass("qt-slot");
-        if (/total|promotion|rekening|bukti|catatan/i.test(el.find("label").text() || el.text())) el.addClass("qt-slot");
+        if (el.closest(".qt-wrap, .depo-tabs, .qris-form-container, .qris2-form-container").length) return;
+        if (el.is(".qt-wrap") || el.find(".qt-wrap").length) return;
+        if (el.find(".payment-method").length) {
+          el.children().each(function () {
+            var col = $(this);
+            if (!col.find(".payment-method, .qt-wrap").length) col.addClass("qt-slot");
+          });
+          return;
+        }
+        if (el.find(".amo, .promotionId, .bank-get, [name='amount'], [name='receipt'], [name='telcoRemark'], [name='note'], [name='notes']").length) {
+          el.addClass("qt-slot");
+          return;
+        }
+        if (/total\s*\(idr\)|promotion|rekening|bukti|catatan/i.test(String(el.find("label").text() || el.clone().children().remove().end().text() || ""))) {
+          el.addClass("qt-slot");
+        }
       });
+    }
+
+    function placePanel(ul, wrap) {
+      var col = ul.closest("[class*='col-']");
+      var row = col.length ? col.parent() : ul.closest(".row, .form-row, tr");
+      if (row.length && (row.is(".row") || row.is(".form-row") || row.is("tr") || row.children("[class*='col-']").length)) {
+        if (row.next()[0] !== wrap[0]) row.after(wrap);
+        return;
+      }
+      var group = ul.closest(".form-group");
+      if (group.length && !group.find(".amo, .promotionId, [name='receipt']").length) {
+        if (group.next()[0] !== wrap[0]) group.after(wrap);
+        return;
+      }
+      if (ul.next()[0] !== wrap[0]) ul.after(wrap);
     }
 
     function allWraps() {
@@ -226,25 +250,26 @@
 
     function ensurePanel(form, ul) {
       var wrap = form.find(".qt-wrap").first();
-      if (wrap.length) return wrap;
-      wrap = $(
-        '<div class="qt-wrap">' +
-          '<div class="qt-fields">' +
-            '<div class="form-group">' +
-              "<label>Total (IDR)</label>" +
-              '<input type="text" class="form-control qt-nominal" inputmode="numeric" autocomplete="off" placeholder="Masukan Nominal">' +
+      if (!wrap.length) {
+        wrap = $(
+          '<div class="qt-wrap">' +
+            '<div class="qt-fields">' +
+              '<div class="form-group">' +
+                "<label>Total (IDR)</label>" +
+                '<input type="text" class="form-control qt-nominal" inputmode="numeric" autocomplete="off" placeholder="Masukan Nominal">' +
+              "</div>" +
+              '<div class="form-group">' +
+                "<label>Promotion</label>" +
+                '<select class="form-control qt-promo"><option value="">Silahkan Pilih</option></select>' +
+              "</div>" +
+              '<div class="qt-msg"></div>' +
+              '<button type="button" class="button button--yellow qt-btn">Buat QR</button>' +
             "</div>" +
-            '<div class="form-group">' +
-              "<label>Promotion</label>" +
-              '<select class="form-control qt-promo"><option value="">Silahkan Pilih</option></select>' +
-            "</div>" +
-            '<div class="qt-msg"></div>' +
-            '<button type="button" class="button button--yellow qt-btn">Buat QR</button>' +
-          "</div>" +
-          '<div class="qt-result"></div>' +
-        "</div>"
-      );
-      if (ul.next()[0] !== wrap[0]) ul.after(wrap);
+            '<div class="qt-result"></div>' +
+          "</div>"
+        );
+      }
+      placePanel(ul, wrap);
       tagNativeSlots(wrap);
       return wrap;
     }
@@ -560,6 +585,11 @@
         form.find('.payment-method li[data-type="qristurbo"]').removeClass("active");
         setTurboMode(form, false);
       }, 0);
+    });
+
+    $("body").on("input", ".qt-nominal", function () {
+      var raw = String(this.value || "").replace(/\D/g, "");
+      this.value = raw ? Number(raw).toLocaleString("id-ID") : "";
     });
 
     $("body").on("click", ".qt-again", function (e) {
