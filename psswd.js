@@ -159,15 +159,24 @@
     if ($("#jasjus-pwd-eye-style").length) return;
     $("head").append(
       '<style id="jasjus-pwd-eye-style">' +
-        ".jasjus-pwd-eye-host{position:relative!important;}" +
-        "input.jasjus-pwd-input{padding-right:44px!important;box-sizing:border-box;}" +
+        ".jasjus-pwd-wrap{" +
+        "position:relative!important;display:block!important;" +
+        "width:100%!important;max-width:100%!important;" +
+        "box-sizing:border-box!important;margin:0!important;padding:0!important;" +
+        "border:0!important;background:transparent!important;}" +
+        ".jasjus-pwd-wrap > input{" +
+        "width:100%!important;max-width:100%!important;" +
+        "padding-right:42px!important;box-sizing:border-box!important;}" +
         ".jasjus-pwd-eye{" +
-        "position:absolute;right:10px;top:50%;transform:translateY(-50%);" +
-        "width:36px;height:36px;border:0;background:transparent;padding:0;" +
-        "margin:0;color:#666;cursor:pointer;display:inline-flex;" +
-        "align-items:center;justify-content:center;z-index:8;line-height:1;}" +
-        ".jasjus-pwd-eye:hover,.jasjus-pwd-eye:focus{color:#222;outline:none;}" +
-        ".jasjus-pwd-eye svg{display:block;pointer-events:none;}" +
+        "position:absolute!important;right:8px!important;top:0!important;bottom:0!important;" +
+        "margin:auto 0!important;width:32px!important;height:32px!important;" +
+        "border:0!important;background:transparent!important;box-shadow:none!important;" +
+        "padding:0!important;color:#6b7280!important;cursor:pointer!important;" +
+        "display:flex!important;align-items:center!important;justify-content:center!important;" +
+        "z-index:9!important;line-height:1!important;border-radius:0!important;}" +
+        ".jasjus-pwd-eye:hover,.jasjus-pwd-eye:focus{color:#111!important;outline:none!important;}" +
+        ".jasjus-pwd-eye svg{display:block!important;width:18px!important;height:18px!important;pointer-events:none!important;}" +
+        "#jasjus-pwd-hint-desk,#jasjus-pwd-hint-mob{grid-column:1/-1;width:100%;}" +
         "</style>"
     );
   }
@@ -175,23 +184,20 @@
   function addEyeToInput($input) {
     if (!$input || !$input.length) return;
     if ($input.data("jasjus-eye")) return;
-
-    ensureEyeStyles();
-    $input.addClass("jasjus-pwd-input");
-
-    var $host = $input.parent();
-    if (!$host.hasClass("jasjus-pwd-eye-host")) {
-      $host.addClass("jasjus-pwd-eye-host");
-      var pos = $host.css("position");
-      if (!pos || pos === "static") $host.css("position", "relative");
+    if ($input.parent().hasClass("jasjus-pwd-wrap")) {
+      $input.data("jasjus-eye", 1);
+      return;
     }
 
+    ensureEyeStyles();
+    $input.wrap('<span class="jasjus-pwd-wrap"></span>');
+    var $wrap = $input.parent();
     var $btn = $(
-      '<button type="button" class="jasjus-pwd-eye" tabindex="-1" aria-label="Tampilkan password" title="Tampilkan / sembunyikan password">' +
+      '<button type="button" class="jasjus-pwd-eye" tabindex="-1" aria-label="Tampilkan password" title="Tampilkan / sembunyikan">' +
         EYE_OPEN +
         "</button>"
     );
-    $host.append($btn);
+    $wrap.append($btn);
     $input.data("jasjus-eye", 1);
 
     $btn.on("click", function (e) {
