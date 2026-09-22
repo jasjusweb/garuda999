@@ -163,7 +163,7 @@
         "position:relative!important;display:block!important;" +
         "width:100%!important;max-width:100%!important;" +
         "box-sizing:border-box!important;margin:0!important;padding:0!important;" +
-        "border:0!important;background:transparent!important;}" +
+        "border:0!important;background:transparent!important;overflow:visible!important;}" +
         ".jasjus-pwd-wrap > input{" +
         "width:100%!important;max-width:100%!important;" +
         "padding-right:42px!important;box-sizing:border-box!important;}" +
@@ -176,9 +176,52 @@
         "z-index:9!important;line-height:1!important;border-radius:0!important;}" +
         ".jasjus-pwd-eye:hover,.jasjus-pwd-eye:focus{color:#111!important;outline:none!important;}" +
         ".jasjus-pwd-eye svg{display:block!important;width:18px!important;height:18px!important;pointer-events:none!important;}" +
+        /* error harus di BAWAH wrap, bukan di dalam box mata */
+        ".jasjus-pwd-wrap > label.error," +
+        ".jasjus-pwd-wrap > .error," +
+        ".jasjus-pwd-wrap > em.error," +
+        ".jasjus-pwd-wrap > span.error{" +
+        "position:static!important;display:block!important;width:100%!important;" +
+        "margin:6px 0 10px!important;padding:0!important;clear:both!important;" +
+        "float:none!important;line-height:1.35!important;}" +
+        ".jasjus-pwd-wrap + label.error," +
+        ".jasjus-pwd-wrap + .error," +
+        ".jasjus-pwd-wrap + em.error," +
+        ".jasjus-pwd-wrap + span.error{" +
+        "display:block!important;margin:6px 0 10px!important;clear:both!important;}" +
         "#jasjus-pwd-hint-desk,#jasjus-pwd-hint-mob{grid-column:1/-1;width:100%;}" +
         "</style>"
     );
+  }
+
+  function relocatePwdErrors() {
+    $(".jasjus-pwd-wrap").each(function () {
+      var $wrap = $(this);
+      $wrap.children("label.error, em.error, span.error, .error").each(function () {
+        var $err = $(this);
+        // jangan pindahkan icon/button
+        if ($err.is("button") || $err.hasClass("jasjus-pwd-eye")) return;
+        if ($err.is("input")) return;
+        $wrap.after($err);
+      });
+    });
+  }
+
+  function patchValidatorPlacement() {
+    if (!$.validator || $.validator.__jasjusPwdPatched) return;
+    $.validator.__jasjusPwdPatched = true;
+    var prev = $.validator.defaults.errorPlacement;
+    $.validator.setDefaults({
+      errorPlacement: function (error, element) {
+        var $el = $(element);
+        if ($el.parent().hasClass("jasjus-pwd-wrap")) {
+          error.insertAfter($el.parent());
+          return;
+        }
+        if (typeof prev === "function") prev.call(this, error, element);
+        else error.insertAfter(element);
+      },
+    });
   }
 
   function addEyeToInput($input) {
@@ -227,25 +270,40 @@
     if (window.location.pathname !== "/secure/admin/profile") return;
 
     function refreshAll() {
+      patchValidatorPlacement();
       applyLabels();
       placeHint();
       placeEyes();
       applyIndonesianUi();
+      relocatePwdErrors();
     }
 
     refreshAll();
     setTimeout(refreshAll, 300);
     setTimeout(refreshAll, 1200);
 
-    // Terjemahkan error yang muncul saat validasi
-    var tick = setInterval(applyIndonesianUi, 400);
+    // Terjemahkan error yang muncul saat validasi + rapikan posisi
+    var tick = setInterval(function () {
+      applyIndonesianUi();
+      relocatePwdErrors();
+    }, 300);
     setTimeout(function () {
       clearInterval(tick);
-    }, 15000);
-    $(document).on("click keyup blur", "#oldPwd,#newPwd,#confirmPwd,#oldPwdMob,#newPwdMob,#confirmPwdMob,button,input[type=submit]", function () {
-      setTimeout(applyIndonesianUi, 50);
-      setTimeout(applyIndonesianUi, 200);
-    });
+    }, 20000);
+    $(document).on(
+      "click keyup blur focusout",
+      "#oldPwd,#newPwd,#confirmPwd,#oldPwdMob,#newPwdMob,#confirmPwdMob,button,input[type=submit]",
+      function () {
+        setTimeout(function () {
+          applyIndonesianUi();
+          relocatePwdErrors();
+        }, 30);
+        setTimeout(function () {
+          applyIndonesianUi();
+          relocatePwdErrors();
+        }, 200);
+      }
+    );
 
     $(document).ajaxSuccess(function (_ev, xhr, settings) {
       if (!settings || !isChangePasswordUrl(settings.url)) return;
