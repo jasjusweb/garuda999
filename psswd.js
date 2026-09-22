@@ -1,7 +1,7 @@
 
 (function ($) {
   var HINT_HTML =
-    '<div class="jasjus-pwd-hint" style="display:block!important;margin:10px 0 14px;padding:10px 12px;border-radius:8px;background:#fff8e6;border:1px solid #f0d78c;color:#5c4a12;font-size:13px;line-height:1.45;clear:both">' +
+    '<div class="jasjus-pwd-hint" style="display:block!important;margin:10px 0 14px;padding:12px 20px 12px 14px;border-radius:8px;background:#fff8e6;border:1px solid #f0d78c;color:#5c4a12;font-size:13px;line-height:1.5;clear:both;box-sizing:border-box;word-break:break-word">' +
     "<strong>Perhatian:</strong> Password hanya huruf dan angka (contoh <code>Abc123</code>), minimal 6 karakter. " +
     "<strong>Jangan pakai karakter khusus</strong> seperti @ # ! ? spasi — biasanya ditolak / dianggap tidak sesuai." +
     "</div>";
@@ -156,53 +156,118 @@
   }
 
   function ensureEyeStyles() {
-    if ($("#jasjus-pwd-eye-style").length) return;
+    $("#jasjus-pwd-eye-style").remove();
     $("head").append(
       '<style id="jasjus-pwd-eye-style">' +
         ".jasjus-pwd-wrap{" +
         "position:relative!important;display:block!important;" +
-        "width:100%!important;max-width:100%!important;" +
-        "box-sizing:border-box!important;margin:0!important;padding:0!important;" +
-        "border:0!important;background:transparent!important;overflow:visible!important;}" +
-        ".jasjus-pwd-wrap > input{" +
-        "width:100%!important;max-width:100%!important;" +
-        "padding-right:42px!important;box-sizing:border-box!important;}" +
+        "width:100%!important;max-width:100%!important;height:44px!important;" +
+        "min-height:44px!important;max-height:44px!important;" +
+        "box-sizing:border-box!important;margin:0 0 0 0!important;padding:0!important;" +
+        "border:0!important;background:transparent!important;overflow:visible!important;" +
+        "line-height:normal!important;flex:none!important;}" +
+        ".jasjus-pwd-wrap > input," +
+        ".jasjus-pwd-wrap > input.error," +
+        ".jasjus-pwd-wrap > input.valid{" +
+        "display:block!important;width:100%!important;max-width:100%!important;" +
+        "height:44px!important;min-height:44px!important;max-height:44px!important;" +
+        "line-height:44px!important;padding-top:0!important;padding-bottom:0!important;" +
+        "padding-right:42px!important;box-sizing:border-box!important;margin:0!important;}" +
         ".jasjus-pwd-eye{" +
-        "position:absolute!important;right:8px!important;top:0!important;bottom:0!important;" +
-        "margin:auto 0!important;width:32px!important;height:32px!important;" +
+        "position:absolute!important;right:8px!important;top:22px!important;" +
+        "transform:translateY(-50%)!important;bottom:auto!important;margin:0!important;" +
+        "width:32px!important;height:32px!important;" +
         "border:0!important;background:transparent!important;box-shadow:none!important;" +
         "padding:0!important;color:#6b7280!important;cursor:pointer!important;" +
         "display:flex!important;align-items:center!important;justify-content:center!important;" +
         "z-index:9!important;line-height:1!important;border-radius:0!important;}" +
         ".jasjus-pwd-eye:hover,.jasjus-pwd-eye:focus{color:#111!important;outline:none!important;}" +
         ".jasjus-pwd-eye svg{display:block!important;width:18px!important;height:18px!important;pointer-events:none!important;}" +
-        /* error harus di BAWAH wrap, bukan di dalam box mata */
-        ".jasjus-pwd-wrap > label.error," +
-        ".jasjus-pwd-wrap > .error," +
-        ".jasjus-pwd-wrap > em.error," +
-        ".jasjus-pwd-wrap > span.error{" +
-        "position:static!important;display:block!important;width:100%!important;" +
-        "margin:6px 0 10px!important;padding:0!important;clear:both!important;" +
-        "float:none!important;line-height:1.35!important;}" +
         ".jasjus-pwd-wrap + label.error," +
         ".jasjus-pwd-wrap + .error," +
         ".jasjus-pwd-wrap + em.error," +
-        ".jasjus-pwd-wrap + span.error{" +
-        "display:block!important;margin:6px 0 10px!important;clear:both!important;}" +
-        "#jasjus-pwd-hint-desk,#jasjus-pwd-hint-mob{grid-column:1/-1;width:100%;}" +
+        ".jasjus-pwd-wrap + span.error," +
+        "label.error[for=oldPwd],label.error[for=newPwd],label.error[for=confirmPwd]," +
+        "label.error[for=oldPwdMob],label.error[for=newPwdMob],label.error[for=confirmPwdMob]{" +
+        "display:block!important;width:100%!important;height:auto!important;" +
+        "margin:6px 0 12px!important;padding:0!important;clear:both!important;" +
+        "float:none!important;line-height:1.35!important;position:static!important;}" +
+        "#jasjus-pwd-hint-desk,#jasjus-pwd-hint-mob,.jasjus-pwd-hint{" +
+        "display:block!important;float:none!important;clear:both!important;" +
+        "grid-column:1/-1!important;width:100%!important;max-width:100%!important;" +
+        "box-sizing:border-box!important;padding:12px 20px 12px 14px!important;" +
+        "margin-left:0!important;margin-right:0!important;" +
+        "word-break:break-word!important;overflow-wrap:anywhere!important;}" +
+        "body.jasjus-pwd-profile .text-right," +
+        "body.jasjus-pwd-profile .pull-right," +
+        "body.jasjus-pwd-profile .float-right," +
+        "body.jasjus-pwd-profile [align=right]," +
+        "body.jasjus-pwd-profile td:last-child," +
+        "body.jasjus-pwd-profile th:last-child," +
+        "body.jasjus-pwd-profile .col-xs-6:last-child," +
+        "body.jasjus-pwd-profile .col-xs-7," +
+        "body.jasjus-pwd-profile .col-xs-8," +
+        "body.jasjus-pwd-profile .col-sm-7," +
+        "body.jasjus-pwd-profile .col-sm-8," +
+        "body.jasjus-pwd-profile .col-md-7," +
+        "body.jasjus-pwd-profile .col-md-8," +
+        "body.jasjus-pwd-profile .value," +
+        "body.jasjus-pwd-profile .field-value," +
+        "body.jasjus-pwd-profile .info-value{" +
+        "padding-right:16px!important;box-sizing:border-box!important;}" +
+        "body.jasjus-pwd-profile .list-group-item," +
+        "body.jasjus-pwd-profile .panel-body," +
+        "body.jasjus-pwd-profile .card-body{" +
+        "padding-right:14px!important;box-sizing:border-box!important;}" +
+        "body.jasjus-pwd-profile a[href*='rid=']," +
+        "body.jasjus-pwd-profile a[href*='/ref/']," +
+        "body.jasjus-pwd-profile .referral," +
+        "body.jasjus-pwd-profile input[readonly]{" +
+        "max-width:100%!important;word-break:break-all!important;" +
+        "padding-right:8px!important;box-sizing:border-box!important;}" +
         "</style>"
     );
+  }
+
+  function markProfilePage() {
+    $("body").addClass("jasjus-pwd-profile");
+  }
+
+  function padRightAlignedText() {
+    $("body.jasjus-pwd-profile")
+      .find("td, th, div, span, p, li, label")
+      .each(function () {
+        var el = this;
+        if (el.closest && el.closest(".jasjus-pwd-hint, .jasjus-pwd-wrap, nav, footer, .navbar")) return;
+        var cs = window.getComputedStyle(el);
+        var align = (cs.textAlign || "").toLowerCase();
+        if (align !== "right" && align !== "end") return;
+        var pr = parseFloat(cs.paddingRight) || 0;
+        if (pr < 14) el.style.setProperty("padding-right", "16px", "important");
+      });
   }
 
   function relocatePwdErrors() {
     $(".jasjus-pwd-wrap").each(function () {
       var $wrap = $(this);
-      $wrap.children("label.error, em.error, span.error, .error").each(function () {
-        var $err = $(this);
-        // jangan pindahkan icon/button
-        if ($err.is("button") || $err.hasClass("jasjus-pwd-eye")) return;
-        if ($err.is("input")) return;
-        $wrap.after($err);
+      $wrap.children().each(function () {
+        var $el = $(this);
+        if ($el.is("input, button, .jasjus-pwd-eye")) return;
+        var txt = ($el.text() || "").trim();
+        var isErr =
+          $el.hasClass("error") ||
+          $el.is("label.error, em.error, span.error") ||
+          /tidak cocok|minimal|wajib|please|character|required|match|password/i.test(txt);
+        if (!isErr) return;
+        $wrap.after($el);
+      });
+      $wrap.css({ height: "44px", minHeight: "44px", maxHeight: "44px" });
+      $wrap.children("input").css({
+        height: "44px",
+        minHeight: "44px",
+        maxHeight: "44px",
+        boxSizing: "border-box",
+        lineHeight: "44px",
       });
     });
   }
@@ -270,12 +335,15 @@
     if (window.location.pathname !== "/secure/admin/profile") return;
 
     function refreshAll() {
+      markProfilePage();
       patchValidatorPlacement();
+      ensureEyeStyles();
       applyLabels();
       placeHint();
       placeEyes();
       applyIndonesianUi();
       relocatePwdErrors();
+      padRightAlignedText();
     }
 
     refreshAll();
