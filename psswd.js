@@ -1,5 +1,11 @@
 
 (function ($) {
+  var HINT_HTML =
+    '<div class="jasjus-pwd-hint" style="display:block!important;margin:10px 0 14px;padding:10px 12px;border-radius:8px;background:#fff8e6;border:1px solid #f0d78c;color:#5c4a12;font-size:13px;line-height:1.45;clear:both">' +
+    "<strong>Perhatian:</strong> Password hanya huruf dan angka (contoh <code>Abc123</code>), minimal 6 karakter. " +
+    "<strong>Jangan pakai karakter khusus</strong> seperti @ # ! ? spasi — biasanya ditolak / dianggap tidak sesuai." +
+    "</div>";
+
   function goHome() {
     window.location.href = "/secure/home";
   }
@@ -34,59 +40,69 @@
     return false;
   }
 
-  function placeHint() {
-    if ($("#jasjus-pwd-hint").length) return;
-
-    var hint =
-      '<div id="jasjus-pwd-hint" style="display:block;margin:10px 0 14px;padding:10px 12px;border-radius:8px;background:#fff8e6;border:1px solid #f0d78c;color:#5c4a12;font-size:13px;line-height:1.45;clear:both">' +
-      "<strong>Perhatian:</strong> Password hanya huruf dan angka (contoh <code>Abc123</code>), minimal 6 karakter. " +
-      "<strong>Jangan pakai karakter khusus</strong> seperti @ # ! ? spasi — biasanya ditolak / dianggap tidak sesuai." +
-      "</div>";
-
-    // Desktop: judul .field-title di kolom kanan
-    var $desktopTitle = $(".field-title").filter(function () {
-      return /ganti password|change password/i.test($(this).text());
-    }).first();
-    if ($desktopTitle.length) {
-      $desktopTitle.after(hint);
-      return;
-    }
-
-    // Mobile / fallback: h3
-    var $h3 = $("h3").filter(function () {
-      return /ganti password|change password/i.test($(this).text());
-    }).first();
-    if ($h3.length) {
-      $h3.after(hint);
-      return;
-    }
-
-    // Cadangan: tepat di atas field password
-    var $old = $("input#oldPwd, input#oldPwdMob").first();
-    if ($old.length) {
-      var $row = $old.closest(".form-group, .form-row, .form-input, li, div");
-      if ($row.length) $row.first().before(hint);
-      else $old.before(hint);
-    }
+  function insertHint($anchor, mode) {
+    if (!$anchor || !$anchor.length) return;
+    var id = mode === "mob" ? "jasjus-pwd-hint-mob" : "jasjus-pwd-hint-desk";
+    if ($("#" + id).length) return;
+    var $hint = $(HINT_HTML).attr("id", id);
+    $anchor.after($hint);
   }
 
-  $(function () {
-    if (window.location.pathname !== "/secure/admin/profile") return;
+  function insertHintBeforeInput($input, mode) {
+    if (!$input || !$input.length) return;
+    var id = mode === "mob" ? "jasjus-pwd-hint-mob" : "jasjus-pwd-hint-desk";
+    if ($("#" + id).length) return;
+    var $hint = $(HINT_HTML).attr("id", id);
+    var $row = $input.closest(".form-group, .form-row, .form-input, .field, li").first();
+    if ($row.length) $row.before($hint);
+    else $input.before($hint);
+  }
 
+  function placeHint() {
+    // Desktop: judul .field-title
+    var $deskTitle = $(".field-title").filter(function () {
+      return /ganti password|change password/i.test($(this).text());
+    }).first();
+    if ($deskTitle.length) insertHint($deskTitle, "desk");
+    else insertHintBeforeInput($("#oldPwd"), "desk");
+
+    // Mobile: h3 Ganti Password
+    var $mobTitle = $("h3").filter(function () {
+      return /ganti password|change password/i.test($(this).text());
+    }).first();
+    if ($mobTitle.length) insertHint($mobTitle, "mob");
+    else insertHintBeforeInput($("#oldPwdMob"), "mob");
+
+    // Cadangan keras: langsung sebelum input mobile/desktop
+    if (!$("#jasjus-pwd-hint-desk").length) insertHintBeforeInput($("#oldPwd"), "desk");
+    if (!$("#jasjus-pwd-hint-mob").length) insertHintBeforeInput($("#oldPwdMob"), "mob");
+  }
+
+  function applyLabels() {
     $(".field-title").text("Ganti Password");
     $("input#oldPwd").prev("label").html('<span class="text-danger">*</span> Password Saat Ini');
     $("input#newPwd").prev("label").html('<span class="text-danger">*</span> Password Baru');
     $("input#confirmPwd").prev("label").html('<span class="text-danger">*</span> Ulangi Password Baru');
 
-    $("h3:contains('Change Password')").text("Ganti Password");
+    $("h3:contains('Change Password'), h3:contains('Ganti Password')").text("Ganti Password");
     $("input#oldPwdMob").prev("label").html('<span class="text-danger">*</span> Password Saat Ini');
     $("input#newPwdMob").prev("label").html('<span class="text-danger">*</span> Password Baru');
     $("input#confirmPwdMob").prev("label").html('<span class="text-danger">*</span> Ulangi Password Baru');
+  }
 
+  $(function () {
+    if (window.location.pathname !== "/secure/admin/profile") return;
+
+    applyLabels();
     placeHint();
-    // kadang form desktop di-render belakangan
-    setTimeout(placeHint, 300);
-    setTimeout(placeHint, 1000);
+    setTimeout(function () {
+      applyLabels();
+      placeHint();
+    }, 300);
+    setTimeout(function () {
+      applyLabels();
+      placeHint();
+    }, 1200);
 
     $(document).ajaxSuccess(function (_ev, xhr, settings) {
       if (!settings || !isChangePasswordUrl(settings.url)) return;
