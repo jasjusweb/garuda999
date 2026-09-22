@@ -1,7 +1,7 @@
 
 (function ($) {
   var HINT_HTML =
-    '<div class="jasjus-pwd-hint" style="display:block!important;margin:10px 0 14px;padding:12px 20px 12px 14px;border-radius:8px;background:#fff8e6;border:1px solid #f0d78c;color:#5c4a12;font-size:13px;line-height:1.5;clear:both;box-sizing:border-box;word-break:break-word">' +
+    '<div class="jasjus-pwd-hint" style="display:block!important;margin:10px 0 14px;padding:10px 14px;border-radius:8px;background:#fff8e6;border:1px solid #f0d78c;color:#5c4a12;font-size:13px;line-height:1.45;clear:both;box-sizing:border-box">' +
     "<strong>Perhatian:</strong> Password hanya huruf dan angka (contoh <code>Abc123</code>), minimal 6 karakter. " +
     "<strong>Jangan pakai karakter khusus</strong> seperti @ # ! ? spasi — biasanya ditolak / dianggap tidak sesuai." +
     "</div>";
@@ -193,58 +193,17 @@
         "margin:6px 0 12px!important;padding:0!important;clear:both!important;" +
         "float:none!important;line-height:1.35!important;position:static!important;}" +
         "#jasjus-pwd-hint-desk,#jasjus-pwd-hint-mob,.jasjus-pwd-hint{" +
-        "display:block!important;float:none!important;clear:both!important;" +
-        "grid-column:1/-1!important;width:100%!important;max-width:100%!important;" +
-        "box-sizing:border-box!important;padding:12px 20px 12px 14px!important;" +
-        "margin-left:0!important;margin-right:0!important;" +
-        "word-break:break-word!important;overflow-wrap:anywhere!important;}" +
+        "grid-column:1/-1;width:100%;max-width:100%;box-sizing:border-box;" +
+        "padding:10px 14px!important;}" +
         "body.jasjus-pwd-profile .text-right," +
-        "body.jasjus-pwd-profile .pull-right," +
-        "body.jasjus-pwd-profile .float-right," +
-        "body.jasjus-pwd-profile [align=right]," +
-        "body.jasjus-pwd-profile td:last-child," +
-        "body.jasjus-pwd-profile th:last-child," +
-        "body.jasjus-pwd-profile .col-xs-6:last-child," +
-        "body.jasjus-pwd-profile .col-xs-7," +
-        "body.jasjus-pwd-profile .col-xs-8," +
-        "body.jasjus-pwd-profile .col-sm-7," +
-        "body.jasjus-pwd-profile .col-sm-8," +
-        "body.jasjus-pwd-profile .col-md-7," +
-        "body.jasjus-pwd-profile .col-md-8," +
-        "body.jasjus-pwd-profile .value," +
-        "body.jasjus-pwd-profile .field-value," +
-        "body.jasjus-pwd-profile .info-value{" +
-        "padding-right:16px!important;box-sizing:border-box!important;}" +
-        "body.jasjus-pwd-profile .list-group-item," +
-        "body.jasjus-pwd-profile .panel-body," +
-        "body.jasjus-pwd-profile .card-body{" +
-        "padding-right:14px!important;box-sizing:border-box!important;}" +
-        "body.jasjus-pwd-profile a[href*='rid=']," +
-        "body.jasjus-pwd-profile a[href*='/ref/']," +
-        "body.jasjus-pwd-profile .referral," +
-        "body.jasjus-pwd-profile input[readonly]{" +
-        "max-width:100%!important;word-break:break-all!important;" +
-        "padding-right:8px!important;box-sizing:border-box!important;}" +
+        "body.jasjus-pwd-profile [align=right]{" +
+        "padding-right:10px!important;}" +
         "</style>"
     );
   }
 
   function markProfilePage() {
     $("body").addClass("jasjus-pwd-profile");
-  }
-
-  function padRightAlignedText() {
-    $("body.jasjus-pwd-profile")
-      .find("td, th, div, span, p, li, label")
-      .each(function () {
-        var el = this;
-        if (el.closest && el.closest(".jasjus-pwd-hint, .jasjus-pwd-wrap, nav, footer, .navbar")) return;
-        var cs = window.getComputedStyle(el);
-        var align = (cs.textAlign || "").toLowerCase();
-        if (align !== "right" && align !== "end") return;
-        var pr = parseFloat(cs.paddingRight) || 0;
-        if (pr < 14) el.style.setProperty("padding-right", "16px", "important");
-      });
   }
 
   function relocatePwdErrors() {
@@ -343,7 +302,6 @@
       placeEyes();
       applyIndonesianUi();
       relocatePwdErrors();
-      padRightAlignedText();
     }
 
     refreshAll();
