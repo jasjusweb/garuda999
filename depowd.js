@@ -50,7 +50,7 @@
       "color:#fff;line-height:1.2;box-sizing:border-box;}" +
       "#" +
       ROOT_ID +
-      " .quick-btn a:first-child{background:#0d8a8a;color:#fff;}" +
+      " .quick-btn a:first-child{background:#00a2b1;color:#fff;}" +
       "#" +
       ROOT_ID +
       " .quick-btn a:last-child{background:#e6b000;color:#12343c;}" +
