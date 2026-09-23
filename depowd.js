@@ -91,7 +91,7 @@
     return (
       '<section class="quick-btn">' +
       '<a href="#" class="g8pop-login">Masuk</a>' +
-      '<a href="#" class="g8pop-signup">Daftar</a>' +
+      '<a href="/register">Daftar</a>' +
       "</section>"
     );
   }
